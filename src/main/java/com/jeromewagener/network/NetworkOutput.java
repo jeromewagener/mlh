@@ -1,6 +1,11 @@
 package com.jeromewagener.network;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class NetworkOutput {
-    int detectedNumber;
-    double certainty;
+    private int detectedNumber;
+    private double certainty;
 }

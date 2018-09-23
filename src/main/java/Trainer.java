@@ -7,32 +7,31 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.*;
 
-public class Launcher {
-    private static final int IMAGE_LOOPS = 1;
+public class Trainer {
+    public static final int MAX_GENERATIONS_COUNT = 50;
 
     public static void main(String[] argv) throws IOException {
         Random random = new SecureRandom();
+
         TrainingData trainingData = new TrainingData();
         trainingData.load();
 
+        // Create a random population
         ArrayList<Network> population = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             Network network = new Network("NN-" + i, random);
-//            com.jeromewagener.network.Network network = new com.jeromewagener.network.Network("from-file",null);
-//            network.readFile("/home/jerome/nn/nn-31p-hundred-images-training.txt");
             population.add(network);
         }
 
-        for (int generation = 1; generation<2000; generation++) {
-            if (generation == 1 || generation % 10 == 0) {
+        // Let evolution do its magic
+        for (int generation = 1; generation <= MAX_GENERATIONS_COUNT; generation++) {
+            if (generation == 1 || generation % 10 == 0 || generation == MAX_GENERATIONS_COUNT) {
                 System.out.println("--------------------------");
                 System.out.println("Start Generation: " + generation);
                 System.out.println("--------------------------");
             }
 
             for (Network network : population) {
-                long start = System.currentTimeMillis();
-
                 int successCounter = 0;
                 double successCertainty = 0.0d;
 
@@ -48,30 +47,13 @@ public class Launcher {
                         successCounter++;
                         successCertainty += evaluator.getCertainty();
                     }
-
-//                    Thread.sleep(5000);
-//
-//                    evaluator.getFrame().setVisible(false);
-//                    evaluator.getFrame().dispose();
-
-                    if (i == IMAGE_LOOPS) {
-                        break;
-                    }
-                    i++;
                 }
 
-                network.setSuccessRate((successCounter / (IMAGE_LOOPS * 1d)) * 100d);
-                network.setCertainty(successCertainty / (IMAGE_LOOPS * 1d));
-
-//                System.out.println();
-//                System.out.println("com.jeromewagener.network.Network: " + network.name);
-//                System.out.println("Duration in seconds: " + (System.currentTimeMillis() - start) / 1000.d);
-//                System.out.println("Success Rate: " + String.valueOf(successCounter / (handwrittenNumbersDataSet.entrySet().size() * 1d) * 100) + "% (" + successCounter + "/" + handwrittenNumbersDataSet.entrySet().size() + ")");
-//                System.out.println("Success Certainty: " + String.valueOf(successCertainty / (handwrittenNumbersDataSet.entrySet().size() * 1d) * 100));
+                network.setSuccessRate((successCounter / (trainingData.get().size() * 1d)) * 100d);
+                network.setCertainty(successCertainty / (trainingData.get().size() * 1d));
             }
 
             evaluate(generation, population, random);
-
         }
 
         Collections.sort(population);
@@ -87,9 +69,6 @@ public class Launcher {
         Collections.sort(population);
 
         if (generation == 1 || generation % 10 == 0) {
-            //population.get(0).visualizeNetwork();
-            //System.out.println(" >> Hidden Layer Bias: " + population.get(0).getHiddenLayerBias());
-            //System.out.println(" >> Output Layer Bias: " + population.get(0).getOutputLayerBias());
             for (Network network : population) {
                 System.out.println(network.getName() + " >> Success Rate: " + network.getSuccessRate() + "% >> Avg. Certainty: " + network.getCertainty());
             }

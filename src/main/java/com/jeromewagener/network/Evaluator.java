@@ -16,8 +16,8 @@ public class Evaluator {
 
         if (network != null) {
             NetworkOutput networkOutput = network.calculate(inputVector);
-            evaluatedAsCorrect = networkOutput.detectedNumber == realValue;
-            certainty = networkOutput.certainty;
+            evaluatedAsCorrect = networkOutput.getDetectedNumber() == realValue;
+            certainty = networkOutput.getCertainty();
         }
     }
 }

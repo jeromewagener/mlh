@@ -1,5 +1,6 @@
 package com.jeromewagener.network;
 
+import com.jeromewagener.util.ImageCompressor;
 import lombok.Getter;
 import lombok.Setter;
 import org.graphstream.graph.Edge;
@@ -17,6 +18,10 @@ import java.util.Random;
 @Getter
 @Setter
 public class Network implements Comparable<Network>{
+    private static final int INPUT_NEURONS_COUNT = ImageCompressor.IMAGE_WIDTH * ImageCompressor.IMAGE_HEIGHT;
+    private static final int HIDDEN_LAYER_NEURONS_COUNT = 10;
+    private static final int OUTPUT_NEURONS_COUNT = 10;
+
     private String name;
     private Map<String, Neuron> neurons = new HashMap<>();
     private double hiddenLayerBias = 0.0d;
@@ -25,8 +30,10 @@ public class Network implements Comparable<Network>{
     private Double successRate = 0.0d;
     private Double certainty = 0.0d;
     private static Graph graph = null;
-    private DecimalFormat df2 = new DecimalFormat("#.##");
+    private DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
+    //            com.jeromewagener.network.Network network = new com.jeromewagener.network.Network("from-file",null);
+//            network.readFile("/home/jerome/nn/nn-31p-hundred-images-training.txt");
     public Network(String name, Random random) throws IOException {
         this.name = name;
         if (random == null) {
@@ -36,14 +43,14 @@ public class Network implements Comparable<Network>{
         // TODO check this https://stackoverflow.com/questions/2480650/role-of-bias-in-neural-networks
 
         // add output neurons
-        for (int i=0; i<10; i++) {
+        for (int i=0; i<OUTPUT_NEURONS_COUNT; i++) {
             neurons.put("O-" + i, new Neuron( "O-" + i, NeuronType.OUTPUT,null));
         }
 
         // add hidden layer neurons
-        for (int i=0; i<4; i++) {
+        for (int i=0; i<HIDDEN_LAYER_NEURONS_COUNT; i++) {
             Map<Neuron, Double> links = new HashMap<>();
-            for (int outputIndex=0; outputIndex<10; outputIndex++) {
+            for (int outputIndex=0; outputIndex<OUTPUT_NEURONS_COUNT; outputIndex++) {
                 links.put(neurons.get("O-" + outputIndex), random.nextDouble());
             }
 
@@ -51,9 +58,9 @@ public class Network implements Comparable<Network>{
         }
 
         // add input neurons
-        for (int i=0; i<25; i++) {
+        for (int i = 0; i<INPUT_NEURONS_COUNT; i++) {
             Map<Neuron, Double> links = new HashMap<>();
-            for (int hlIndex=0; hlIndex<4; hlIndex++) {
+            for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
                 links.put(neurons.get("HL-" + hlIndex), random.nextDouble());
             }
 
@@ -74,6 +81,7 @@ public class Network implements Comparable<Network>{
 
         //printNetwork();
 
+        // Detect brightest output neuron which indicated which number between 0 and 9 the NN thinks is shown in the image
         Neuron max = null;
         for (int i=0; i<10; i++) {
             //System.out.println(" -> " + neurons.get("O-" + i).label + " - " + neurons.get("O-" + i).value);
@@ -84,15 +92,15 @@ public class Network implements Comparable<Network>{
         }
 
         NetworkOutput networkOutput = new NetworkOutput();
-        networkOutput.detectedNumber = Integer.valueOf(max.label.split("-")[1]);
-        networkOutput.certainty = max.value;
+        networkOutput.setDetectedNumber(Integer.valueOf(max.label.split("-")[1]));
+        networkOutput.setCertainty(max.value);
         return networkOutput;
     }
 
     private void calculateHiddenLayerValues() {
         Map<Neuron, Double> weightedSumLinks = new HashMap<>();
-        for (int hlIndex=0; hlIndex<4; hlIndex++) {
-            for (int inputIndex=0; inputIndex<25; inputIndex++) {
+        for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
+            for (int inputIndex=0; inputIndex<INPUT_NEURONS_COUNT; inputIndex++) {
                 weightedSumLinks.put(neurons.get("IP-" + inputIndex), neurons.get("IP-" + inputIndex).links.get(neurons.get("HL-" + hlIndex)));
             }
 
@@ -106,7 +114,7 @@ public class Network implements Comparable<Network>{
     private void calculateOutputLayerValues() {
         Map<Neuron, Double> weightedSumLinks = new HashMap<>();
         for (int outputIndex=0; outputIndex<10; outputIndex++) {
-            for (int hlIndex=0; hlIndex<4; hlIndex++) {
+            for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
                 weightedSumLinks.put(neurons.get("HL-" + hlIndex), neurons.get("HL-" + hlIndex).links.get(neurons.get("O-" + outputIndex)));
             }
 
@@ -218,7 +226,7 @@ public class Network implements Comparable<Network>{
             if (neuron.links != null) {
                 for (Map.Entry<Neuron, Double> entry : neuron.links.entrySet()) {
                     Edge edge = graph.addEdge(nodes.get(neuron.label) + "-" + nodes.get(entry.getKey().label), nodes.get(neuron.label), nodes.get(entry.getKey().label), true);
-                    edge.addAttribute("ui.label", String.valueOf(df2.format(entry.getValue())));
+                    edge.addAttribute("ui.label", String.valueOf(decimalFormat.format(entry.getValue())));
                 }
             }
         }
