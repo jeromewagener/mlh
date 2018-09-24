@@ -17,18 +17,24 @@ import java.util.Random;
 @Getter
 @Setter
 public class Network implements Comparable<Network>{
+    /** Total number of input neurons. Each input neuron represents one pixel of the scale down handwritten number image */
     private static final int INPUT_NEURONS_COUNT = ImageCompressor.IMAGE_WIDTH * ImageCompressor.IMAGE_HEIGHT;
+    /** Total number of hidden layer neurons. Value determined by playing around... as this is more art than science */
     private static final int HIDDEN_LAYER_NEURONS_COUNT = 10;
+    /** Total number of output neurons. As the output is supposed to be a number between 0 and 9 it makes sense to have 10 output neurons. */
     private static final int OUTPUT_NEURONS_COUNT = 10;
 
+    /** The name of the network. Helps identifying from which generation the network comes from or to identify it when loaded from a file */
     private String name;
+
+    /** All neurons are stored in one big hash-map for easy and fast access */
     private Map<String, Neuron> neurons = new HashMap<>();
+
     private double hiddenLayerBias = 0.0d;
     private double outputLayerBias = 0.0d;
-
     private Double successRate = 0.0d;
     private Double certainty = 0.0d;
-    private DecimalFormat decimalFormat = new DecimalFormat("#.##");
+    private DecimalFormat decimalFormat = new DecimalFormat("0.000");
 
     /** Create a new network without any neurons or anything else.
      * Typically used when the network information is loaded from a file or string
@@ -130,7 +136,7 @@ public class Network implements Comparable<Network>{
 
             if (neuron.links != null) {
                 for (Map.Entry<Neuron, Double> entry : neuron.links.entrySet()) {
-                    stringBuilder.append(entry.getKey().label).append("#").append(entry.getValue()).append("/");
+                    stringBuilder.append(entry.getKey().label).append("#").append(decimalFormat.format(entry.getValue())).append("/");
                 }
                 stringBuilder.append("\n");
             } else {

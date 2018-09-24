@@ -1,11 +1,10 @@
 package com.jeromewagener.network;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class Genetics {
-    public static Network breed(String networkName, Network network1, Network network2) throws IOException {
+    private static Network breed(String networkName, Network network1, Network network2) throws IOException {
         Network child = new Network(networkName);
 
         // Make a copy of the first network's neurons
@@ -36,7 +35,7 @@ public class Genetics {
         return child;
     }
 
-    public static void mutate(Network network) {
+    private static void mutate(Network network) {
         double mutationFactor = ((new Random()).nextDouble() - 0.5d) / 10.0d;
 
         for (Map.Entry<String, Neuron> neuron : network.getNeurons().entrySet()) {
@@ -47,6 +46,45 @@ public class Genetics {
             for (Map.Entry<Neuron, Double> entry : neuron.getValue().links.entrySet()) {
                 entry.setValue(entry.getValue() - mutationFactor);
             }
+        }
+    }
+
+    public static void evolve(int generation, ArrayList<Network> population, Random random) throws IOException {
+        HashSet<Network> popSet = new HashSet<>(population);
+        population.clear();
+        population.addAll(popSet);
+
+        // order population
+        Collections.sort(population);
+
+        if (generation == 1 || generation % 10 == 0) {
+            for (Network network : population) {
+                System.out.println(network.getName() + " >> Success Rate: " + network.getSuccessRate() + "% >> Avg. Certainty: " + network.getCertainty());
+            }
+            System.out.println();
+        }
+
+        // drop all low performers
+        int populationSize = population.size();
+        for (int i=10; i<populationSize; i++) {
+            population.remove(population.size()-1);
+        }
+
+        // add fresh blood
+        for (int i=0; i<10; i++) {
+            population.add(new Network("G'"+ generation + "-" + i, random));
+        }
+
+        // breed
+        for (int i=0; i<10; i+=2) {
+            Network network = Genetics.breed("G"+ generation + "-" + i, population.get(i), population.get(i+1));
+            Genetics.mutate(network);
+            population.add(network);
+        }
+        for (int i=10; i<20; i++) {
+            Network network = Genetics.breed("G"+ generation + "-" + i, population.get(i-10), population.get(i));
+            Genetics.mutate(network);
+            population.add(network);
         }
     }
 }

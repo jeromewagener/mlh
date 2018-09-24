@@ -8,7 +8,7 @@ import java.security.SecureRandom;
 import java.util.*;
 
 public class Trainer {
-    private static final int MAX_GENERATIONS_COUNT = 50;
+    public static int MAX_GENERATIONS_COUNT = 50;
 
     public static void main(String[] argv) throws IOException {
         Random random = new SecureRandom();
@@ -27,7 +27,7 @@ public class Trainer {
         for (int generation = 1; generation <= MAX_GENERATIONS_COUNT; generation++) {
             if (generation == 1 || generation % 10 == 0 || generation == MAX_GENERATIONS_COUNT) {
                 System.out.println("--------------------------");
-                System.out.println("Start Generation: " + generation);
+                System.out.println(" >> Start Generation: " + generation);
                 System.out.println("--------------------------");
             }
 
@@ -52,49 +52,11 @@ public class Trainer {
                 network.setCertainty(successCertainty / (trainingData.get().size() * 1d));
             }
 
-            evaluate(generation, population, random);
+            Genetics.evolve(generation, population, random);
         }
 
+        // At the end, we sort by best to worst network from the latest population and we print the best network to a file
         Collections.sort(population);
         population.get(0).printNetwork(true);
-    }
-
-    private static void evaluate(int generation, ArrayList<Network> population, Random random) throws IOException {
-        HashSet<Network> popSet = new HashSet<>(population);
-        population.clear();
-        population.addAll(popSet);
-
-        // order population
-        Collections.sort(population);
-
-        if (generation == 1 || generation % 10 == 0) {
-            for (Network network : population) {
-                System.out.println(network.getName() + " >> Success Rate: " + network.getSuccessRate() + "% >> Avg. Certainty: " + network.getCertainty());
-            }
-            System.out.println();
-        }
-
-        // drop all low performers
-        int populationSize = population.size();
-        for (int i=10; i<populationSize; i++) {
-            population.remove(population.size()-1);
-        }
-
-        // add fresh blood
-        for (int i=0; i<10; i++) {
-            population.add(new Network("G'"+ generation + "-" + i, random));
-        }
-
-        // breed
-        for (int i=0; i<10; i+=2) {
-            Network network = Genetics.breed("G"+ generation + "-" + i, population.get(i), population.get(i+1));
-            Genetics.mutate(network);
-            population.add(network);
-        }
-        for (int i=10; i<20; i++) {
-            Network network = Genetics.breed("G"+ generation + "-" + i, population.get(i-10), population.get(i));
-            Genetics.mutate(network);
-            population.add(network);
-        }
     }
 }
