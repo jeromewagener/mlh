@@ -3,13 +3,12 @@ package com.jeromewagener.network;
 import com.jeromewagener.util.ImageCompressor;
 import lombok.Getter;
 import lombok.Setter;
-import org.graphstream.graph.Edge;
-import org.graphstream.graph.Graph;
-import org.graphstream.graph.Node;
-import org.graphstream.graph.implementations.SingleGraph;
-import org.graphstream.ui.view.Viewer;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,22 +28,24 @@ public class Network implements Comparable<Network>{
 
     private Double successRate = 0.0d;
     private Double certainty = 0.0d;
-    private static Graph graph = null;
     private DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
-    //            com.jeromewagener.network.Network network = new com.jeromewagener.network.Network("from-file",null);
-//            network.readFile("/home/jerome/nn/nn-31p-hundred-images-training.txt");
-    public Network(String name, Random random) throws IOException {
+    /** Create a new network without any neurons or anything else.
+     * Typically used when the network information is loaded from a file or string
+     * @param name the name used for the network */
+    public Network(String name) {
         this.name = name;
-        if (random == null) {
-            return;
-        }
+    }
 
-        // TODO check this https://stackoverflow.com/questions/2480650/role-of-bias-in-neural-networks
+    /** Create a new network and initializes it with random values
+     * @param name the name used for the network
+     * @param random the random number generator to be used during the initialization */
+    public Network(String name, Random random) {
+        this.name = name;
 
         // add output neurons
         for (int i=0; i<OUTPUT_NEURONS_COUNT; i++) {
-            neurons.put("O-" + i, new Neuron( "O-" + i, NeuronType.OUTPUT,null));
+            neurons.put("O-" + i, new Neuron( "O-" + i, Neuron.Type.OUTPUT,null));
         }
 
         // add hidden layer neurons
@@ -54,7 +55,7 @@ public class Network implements Comparable<Network>{
                 links.put(neurons.get("O-" + outputIndex), random.nextDouble());
             }
 
-            neurons.put("HL-" + i, new Neuron( "HL-" + i, NeuronType.HIDDEN, links));
+            neurons.put("HL-" + i, new Neuron( "HL-" + i, Neuron.Type.HIDDEN, links));
         }
 
         // add input neurons
@@ -64,22 +65,20 @@ public class Network implements Comparable<Network>{
                 links.put(neurons.get("HL-" + hlIndex), random.nextDouble());
             }
 
-            neurons.put("IP-" +i, new Neuron( "IP-" + i, NeuronType.INPUT, links));
+            neurons.put("IP-" +i, new Neuron( "IP-" + i, Neuron.Type.INPUT, links));
         }
 
         outputLayerBias = random.nextDouble()*10;
         hiddenLayerBias = random.nextDouble()*10;
     }
 
-    public NetworkOutput calculate(double[] inputVector) throws IOException {
+    public Output calculate(double[] inputVector) {
         for (int i=0; i<inputVector.length; i++) {
             neurons.get("IP-" + i).value = inputVector[i];
         }
 
         calculateHiddenLayerValues();
         calculateOutputLayerValues();
-
-        //printNetwork();
 
         // Detect brightest output neuron which indicated which number between 0 and 9 the NN thinks is shown in the image
         Neuron max = null;
@@ -91,7 +90,7 @@ public class Network implements Comparable<Network>{
             }
         }
 
-        NetworkOutput networkOutput = new NetworkOutput();
+        Output networkOutput = new Output();
         networkOutput.setDetectedNumber(Integer.valueOf(max.label.split("-")[1]));
         networkOutput.setCertainty(max.value);
         return networkOutput;
@@ -105,9 +104,6 @@ public class Network implements Comparable<Network>{
             }
 
             neurons.get("HL-" + hlIndex).calculateWeightedSum(hiddenLayerBias, weightedSumLinks);
-
-//            System.out.println("HL-" + hlIndex + " --> " + neurons.get("HL-" + hlIndex).value);
-//            System.out.println("HLb-" + hlIndex + " --> " + hiddenLayerBias);
         }
     }
 
@@ -119,25 +115,22 @@ public class Network implements Comparable<Network>{
             }
 
             neurons.get("O-" + outputIndex).calculateWeightedSum(outputLayerBias, weightedSumLinks);
-
-//            System.out.println("O-" + outputIndex + " --> " + neurons.get("O-" + outputIndex).value);
-//            System.out.println("Ob-" + outputIndex + " --> " + outputLayerBias);
         }
     }
 
     public String printNetwork(boolean writeToFile) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append("hiddenLayerBias=" + hiddenLayerBias + "\n");
-        stringBuilder.append("outputLayerBias=" + outputLayerBias + "\n");
+        stringBuilder.append("hiddenLayerBias=").append(hiddenLayerBias).append("\n");
+        stringBuilder.append("outputLayerBias=").append(outputLayerBias).append("\n");
 
         for (Neuron neuron : neurons.values()) {
 
-            stringBuilder.append(neuron.label + ";" + neuron.neuronType + ";");
+            stringBuilder.append(neuron.label).append(";").append(neuron.type).append(";");
 
             if (neuron.links != null) {
                 for (Map.Entry<Neuron, Double> entry : neuron.links.entrySet()) {
-                    stringBuilder.append(entry.getKey().label + "#" + entry.getValue() + "/");
+                    stringBuilder.append(entry.getKey().label).append("#").append(entry.getValue()).append("/");
                 }
                 stringBuilder.append("\n");
             } else {
@@ -151,167 +144,10 @@ public class Network implements Comparable<Network>{
             }
         }
 
-        //System.out.println(stringBuilder);
         return stringBuilder.toString();
     }
 
-    public void visualizeNetwork() {
-
-        Map<String, Node> nodes = new HashMap<>();
-
-        String styleSheet = "edge { shape: line; fill-color: #ccc; arrow-size: 6px, 4px; }";
-
-        if (graph == null) {
-            graph = new SingleGraph(name);
-            graph.addAttribute("ui.stylesheet", styleSheet);
-            Viewer viewer = graph.display();
-            viewer.disableAutoLayout();
-        } else {
-            graph.clear();
-            graph.addAttribute("ui.stylesheet", styleSheet);
-        }
-
-        int inputCounter = 0;
-        int hiddenCounter = 0;
-        int outputCounter = 0;
-
-        for (Neuron neuron : neurons.values()) {
-
-            //stringBuilder.append(neuron.label + ";" + neuron.neuronType + ";" + neuron.bias + ";");
-
-            Node node = graph.addNode(neuron.label);
-            node.addAttribute("ui.label", neuron.label);
-
-            if (NeuronType.INPUT.equals(neuron.neuronType)) {
-                node.setAttribute("x", 0);
-                node.setAttribute("y", inputCounter);
-                inputCounter += 20;
-            } else if (NeuronType.HIDDEN.equals(neuron.neuronType)) {
-                if (neuron.label.startsWith("HL-0")) {
-                    node.setAttribute("x", 100);
-                    node.setAttribute("y", 700);
-                } else if (neuron.label.startsWith("HL-1")) {
-                    node.setAttribute("x", 300);
-                    node.setAttribute("y", 500);
-                } else if (neuron.label.startsWith("HL-2")) {
-                    node.setAttribute("x", 500);
-                    node.setAttribute("y", 300);
-                } else if (neuron.label.startsWith("HL-3")) {
-                    node.setAttribute("x", 700);
-                    node.setAttribute("y", 100);
-                }
-            } else if (NeuronType.OUTPUT.equals(neuron.neuronType)) {
-                node.setAttribute("x", 800);
-                node.setAttribute("y", outputCounter);
-                outputCounter += 50;
-
-            } else {
-                System.out.println("This should not happen");
-            }
-
-            nodes.put(neuron.label, node);
-
-            /*if (neuron.links != null) {
-                for (Map.Entry<com.jeromewagener.network.Neuron, Double> entry : neuron.links.entrySet()) {
-                    stringBuilder.append(entry.getKey().label + "#" + entry.getValue() + "/");
-                }
-                stringBuilder.append("\n");
-            } else {
-                stringBuilder.append("\n");
-            }*/
-        }
-
-
-        for (Neuron neuron : neurons.values()) {
-            if (neuron.links != null) {
-                for (Map.Entry<Neuron, Double> entry : neuron.links.entrySet()) {
-                    Edge edge = graph.addEdge(nodes.get(neuron.label) + "-" + nodes.get(entry.getKey().label), nodes.get(neuron.label), nodes.get(entry.getKey().label), true);
-                    edge.addAttribute("ui.label", String.valueOf(decimalFormat.format(entry.getValue())));
-                }
-            }
-        }
-
-//        try {
-//            Thread.sleep(5000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-        //graph.display();
-
-        /*graph.addNode("A" );
-        graph.addNode("B" );
-        graph.addNode("C" );
-        graph.addEdge("AB", "A", "B");
-        graph.addEdge("BC", "B", "C");
-        graph.addEdge("CA", "C", "A");
-
-        for (Node node : graph) {
-            node.addAttribute("ui.label", node.getId());
-        }
-
-        for (Edge edge : graph.getEachEdge()) {
-            edge.addAttribute("ui.label", edge.getId());
-        }*/
-
-
-    }
-
-//    public static void main(String[] argv) throws IOException {
-//        //while (true) {
-//            //com.jeromewagener.network.Network network = new com.jeromewagener.network.Network("rand", new Random());
-//
-//            //com.jeromewagener.network.Network network = new com.jeromewagener.network.Network("from-file",null);
-//            //network.readFile("/home/jerome/nn/nn-22-i25-hundred-images.txt");
-//            //network.readFile("/home/jerome/nn/nn-35p-twenty-image-training.txt");
-//            com.jeromewagener.network.Network network = new com.jeromewagener.network.Network("from-file",null);
-//            network.readFile("/home/jerome/nn/nn-1524327261428.txt");
-//
-//            //network.visualizeNetwork();
-//            //network.printNetwork(false);
-//
-//            Map<String, Integer> handwrittenNumbersDataSet = new HashMap<String, Integer>();
-//            File rootDataSetLocation = new File("/home/jerome/Code/mlh/src/main/resources/0022_AT3M/");
-//            for (File numbersDirectory : rootDataSetLocation.listFiles()) {
-//                if (numbersDirectory.isDirectory()) {
-//                    for (File numberSubDirectory : numbersDirectory.listFiles()) {
-//                        if (numberSubDirectory.getName().endsWith(".png")) {
-//                            handwrittenNumbersDataSet.put(
-//                                    numberSubDirectory.getAbsolutePath(),
-//                                    Integer.valueOf(numbersDirectory.getName()));
-//                        }
-//                    }
-//                }
-//            }
-//
-//            //handwrittenNumbersDataSet.size()
-//            int IMAGE_LOOPS = handwrittenNumbersDataSet.size();
-//
-//            double successCounter = 0;
-//            double successCertainty = 0.0d;
-//            int i = 1;
-//            for (Map.Entry<String, Integer> entry : handwrittenNumbersDataSet.entrySet()) {
-//                com.jeromewagener.network.Evaluator evaluator = new com.jeromewagener.network.Evaluator(entry.getKey(), entry.getValue(), network);
-//
-//                if (evaluator.evaluatedAsCorrect) {
-//                    successCounter++;
-//                    successCertainty += evaluator.certainty;
-//                }
-//
-//                if (i == IMAGE_LOOPS) {
-//                    break;
-//                }
-//                i++;
-//            }
-//
-//            network.successRate = (successCounter / (IMAGE_LOOPS * 1d)) * 100d;
-//            network.certainty = successCertainty / (IMAGE_LOOPS * 1d);
-//
-//            System.out.println(network.name + " >> Success Rate: " + network.successRate + "% >> Avg. Certainty: " + network.certainty);
-//        //}
-//    }
-
-    public void initializeFromString(String text) throws IOException {
+    void initializeFromString(String text) {
         String[] lines = text.split("\n");
 
         for (String line : lines) {
@@ -329,7 +165,7 @@ public class Network implements Comparable<Network>{
                 break;
             }
 
-            Neuron neuron = new Neuron(neuronComponents[0], NeuronType.valueOf(neuronComponents[1]), new HashMap<>());
+            Neuron neuron = new Neuron(neuronComponents[0], Neuron.Type.valueOf(neuronComponents[1]), new HashMap<>());
             neurons.put(neuronComponents[0], neuron);
         }
 
@@ -346,51 +182,9 @@ public class Network implements Comparable<Network>{
         }
     }
 
-    public void readFile(String file) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader (file));
-        String line;
-
-        try {
-            while((line = reader.readLine()) != null) {
-                if (line.startsWith("hiddenLayerBias")) {
-                    hiddenLayerBias = Double.valueOf(line.split("=")[1]);
-                    continue;
-                } else if (line.startsWith("outputLayerBias")) {
-                    outputLayerBias = Double.valueOf(line.split("=")[1]);
-                    continue;
-                }
-
-                String[] neuronComponents = line.split(";");
-
-                if (neuronComponents.length < 2) {
-                    break;
-                }
-
-                Neuron neuron = new Neuron(neuronComponents[0], NeuronType.valueOf(neuronComponents[1]), new HashMap<>());
-                neurons.put(neuronComponents[0], neuron);
-            }
-        } finally {
-            reader.close();
-        }
-
-        BufferedReader linkReader = new BufferedReader(new FileReader (file));
-
-        try {
-            while((line = linkReader.readLine()) != null) {
-                String[] neuronComponents = line.split(";");
-
-                if (neuronComponents.length == 3) {
-                    String[] allLinkBundles = neuronComponents[2].split("/");
-                    for (String linkBundle : allLinkBundles) {
-                        String[] linkComponents = linkBundle.split("#");
-
-                        neurons.get(neuronComponents[0]).links.put(neurons.get(linkComponents[0]), Double.valueOf(linkComponents[1]));
-                    }
-                }
-            }
-        } finally {
-            linkReader.close();
-        }
+    public void initializeFromFilePath(String filePath) throws IOException {
+        byte[] encoded = Files.readAllBytes(Paths.get(filePath));
+        initializeFromString(new String(encoded, StandardCharsets.UTF_8));
     }
 
     @Override
@@ -422,4 +216,12 @@ public class Network implements Comparable<Network>{
     public int hashCode() {
         return successRate.hashCode() + certainty.hashCode();
     }
+
+    @Getter
+    @Setter
+    public class Output {
+        private int detectedNumber;
+        private double certainty;
+    }
 }
+

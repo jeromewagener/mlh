@@ -13,10 +13,10 @@ import java.util.HashMap;
 public class ImageCompressor {
     public static final int IMAGE_WIDTH = 10;
     public static final int IMAGE_HEIGHT = 10;
-    public static final int HIGH_ACTIVATION_THRESHOLD = 235;
-    public static final int LOW_ACTIVATION_THRESHOLD = 250;
-    public static HashMap<String, double[]> CACHE = new HashMap<>();
-    private boolean visualize = false;
+    private static final int HIGH_ACTIVATION_THRESHOLD = 235;
+    private static final int LOW_ACTIVATION_THRESHOLD = 250;
+    private static HashMap<String, double[]> CACHE = new HashMap<>();
+    private boolean visualize;
 
     public ImageCompressor(boolean visualize) {
         this.visualize = visualize;
@@ -29,7 +29,7 @@ public class ImageCompressor {
             JLabel label = new JLabel();
             label.setIcon(icon);
 
-            BufferedImage scaledImage = getScaledImage(image, IMAGE_WIDTH, IMAGE_HEIGHT);
+            BufferedImage scaledImage = getScaledImage(image);
             WritableRaster raster = scaledImage.getRaster();
 
             double[] inputVector = new double[IMAGE_WIDTH * IMAGE_HEIGHT];
@@ -47,7 +47,7 @@ public class ImageCompressor {
                         }
                     }
 
-                    int averagePixelColors = (new Double(((pixels[0] + pixels[1] + pixels[2]) / 3.0))).intValue();
+                    int averagePixelColors = (int) ((pixels[0] + pixels[1] + pixels[2]) / 3.0);
                     double normalizedAveragePixelColors = 1 - (averagePixelColors / 255.0);
 
                     DecimalFormat decimalFormat = new DecimalFormat();
@@ -67,12 +67,12 @@ public class ImageCompressor {
         return CACHE.get(fileName);
     }
 
-    private BufferedImage getScaledImage(Image srcImg, int w, int h){
-        BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+    private BufferedImage getScaledImage(Image srcImg){
+        BufferedImage resizedImg = new BufferedImage(IMAGE_WIDTH, IMAGE_HEIGHT, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = resizedImg.createGraphics();
 
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2.drawImage(srcImg, 0, 0, w, h, null);
+        g2.drawImage(srcImg, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, null);
         g2.dispose();
 
         return resizedImg;

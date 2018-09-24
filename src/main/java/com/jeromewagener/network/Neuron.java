@@ -4,22 +4,22 @@ import java.util.Map;
 import java.util.Objects;
 
 public class Neuron {
-    String label = "";
-    NeuronType neuronType;
+    String label;
+    Type type;
 
     // All except output layers
     Map<Neuron, Double> links;
 
     // Only for Input
-    public Double value = 0.0;
+    Double value = 0.0;
 
-    public Neuron(String label, NeuronType neuronType, Map<Neuron, Double> links) {
+    Neuron(String label, Type type, Map<Neuron, Double> links) {
         this.label = label;
-        this.neuronType = neuronType;
+        this.type = type;
         this.links = links;
     }
 
-    public void calculateWeightedSum(Double bias, Map<Neuron, Double> links) {
+    void calculateWeightedSum(Double bias, Map<Neuron, Double> links) {
         double weightedSum = 0;
 
         for (Map.Entry<Neuron, Double> link : links.entrySet()) {
@@ -48,5 +48,11 @@ public class Neuron {
     private static double sigmoid(double x)
     {
         return 1 / (1 + Math.exp(-x));
+    }
+
+    public enum Type {
+        INPUT,
+        HIDDEN,
+        OUTPUT
     }
 }

@@ -1,4 +1,4 @@
-import com.jeromewagener.network.Evaluator;
+import com.jeromewagener.util.Evaluator;
 import com.jeromewagener.util.ImageCompressor;
 import com.jeromewagener.util.TrainingData;
 import org.junit.Assert;
@@ -8,9 +8,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertArrayEquals;
 
-public class TrainingDataTests {
+public class TrainingDataTest {
 
     @Test
     public void loadTrainingData() {

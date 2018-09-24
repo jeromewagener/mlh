@@ -1,6 +1,6 @@
-package com.jeromewagener.network;
+package com.jeromewagener.util;
 
-import com.jeromewagener.util.ImageCompressor;
+import com.jeromewagener.network.Network;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -15,7 +15,7 @@ public class Evaluator {
         double[] inputVector = imageCompressor.compress(fileName);
 
         if (network != null) {
-            NetworkOutput networkOutput = network.calculate(inputVector);
+            Network.Output networkOutput = network.calculate(inputVector);
             evaluatedAsCorrect = networkOutput.getDetectedNumber() == realValue;
             certainty = networkOutput.getCertainty();
         }

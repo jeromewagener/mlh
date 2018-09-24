@@ -1,4 +1,4 @@
-import com.jeromewagener.network.Evaluator;
+import com.jeromewagener.util.Evaluator;
 import com.jeromewagener.network.Genetics;
 import com.jeromewagener.network.Network;
 import com.jeromewagener.util.TrainingData;
@@ -8,7 +8,7 @@ import java.security.SecureRandom;
 import java.util.*;
 
 public class Trainer {
-    public static final int MAX_GENERATIONS_COUNT = 50;
+    private static final int MAX_GENERATIONS_COUNT = 50;
 
     public static void main(String[] argv) throws IOException {
         Random random = new SecureRandom();
@@ -35,7 +35,6 @@ public class Trainer {
                 int successCounter = 0;
                 double successCertainty = 0.0d;
 
-                int i = 1;
                 for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
                     Evaluator evaluator = new Evaluator();
                     evaluator.evaluate(

@@ -1,7 +1,6 @@
 import com.jeromewagener.network.Network;
 import com.jeromewagener.util.ImageCompressor;
 import com.jeromewagener.util.TrainingData;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -15,8 +14,8 @@ public class NetworkTest {
         TrainingData trainingData = new TrainingData();
         trainingData.load();
 
-        Network network = new Network("from-file", null);
-        network.readFile("/home/jerome/code/mlh/src/test/resources/nn-1537732798767.txt");
+        Network network = new Network("from-file");
+        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1537732798767.txt");
 
         ImageCompressor imageCompressor = new ImageCompressor(false);
 

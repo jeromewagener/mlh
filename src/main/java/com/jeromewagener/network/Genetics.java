@@ -6,7 +6,7 @@ import java.util.Random;
 
 public class Genetics {
     public static Network breed(String networkName, Network network1, Network network2) throws IOException {
-        Network child = new Network(networkName, null);
+        Network child = new Network(networkName);
 
         // Make a copy of the first network's neurons
         StringBuilder newNetwork = new StringBuilder();
