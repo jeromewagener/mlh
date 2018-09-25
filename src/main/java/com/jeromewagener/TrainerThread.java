@@ -1,26 +1,50 @@
-import com.jeromewagener.util.Evaluator;
+package com.jeromewagener;
+
 import com.jeromewagener.network.Genetics;
 import com.jeromewagener.network.Network;
+import com.jeromewagener.util.Evaluator;
 import com.jeromewagener.util.TrainingData;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Random;
 
-public class Trainer {
-    public static int MAX_GENERATIONS_COUNT = 50;
+@Getter
+public class TrainerThread extends Thread {
 
-    public static void main(String[] argv) throws IOException {
+    static int MAX_GENERATIONS_COUNT = 50;
+
+    private String winnerNetwork;
+    private ArrayList<Network> population;
+
+    public TrainerThread(String name) {
+        super(name);
+    }
+
+    public TrainerThread(String name, ArrayList<Network> population) {
+        super(name);
+        this.population = population;
+
+    }
+
+    @Override
+    public void run() {
         Random random = new SecureRandom();
 
         TrainingData trainingData = new TrainingData();
         trainingData.load();
 
-        // Create a random population
-        ArrayList<Network> population = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            Network network = new Network("NN-" + i, random);
-            population.add(network);
+        // Create a random population if we do not have a population to start with
+        if (population == null) {
+            population = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                Network network = new Network("NN-" + i, random);
+                population.add(network);
+            }
         }
 
         // Let evolution do its magic
@@ -37,10 +61,14 @@ public class Trainer {
 
                 for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
                     Evaluator evaluator = new Evaluator();
-                    evaluator.evaluate(
-                            entry.getKey(),
-                            entry.getValue(),
-                            network);
+                    try {
+                        evaluator.evaluate(
+                                entry.getKey(),
+                                entry.getValue(),
+                                network);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
                     if (evaluator.isEvaluatedAsCorrect()) {
                         successCounter++;
@@ -52,11 +80,19 @@ public class Trainer {
                 network.setCertainty(successCertainty / (trainingData.get().size() * 1d));
             }
 
-            Genetics.evolve(generation, population, random);
+            try {
+                Genetics.evolve(generation, population, random);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         // At the end, we sort by best to worst network from the latest population and we print the best network to a file
         Collections.sort(population);
-        population.get(0).printNetwork(true);
+        try {
+            winnerNetwork = population.get(0).printNetwork(false);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -153,7 +153,7 @@ public class Network implements Comparable<Network>{
         return stringBuilder.toString();
     }
 
-    void initializeFromString(String text) {
+    public void initializeFromString(String text) {
         String[] lines = text.split("\n");
 
         for (String line : lines) {
