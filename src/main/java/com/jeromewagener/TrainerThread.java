@@ -25,10 +25,15 @@ public class TrainerThread extends Thread {
         super(name);
     }
 
-    public TrainerThread(String name, ArrayList<Network> population) {
+    public TrainerThread(String name, ArrayList<String> population) {
         super(name);
-        this.population = population;
 
+        this.population = new ArrayList<>();
+        for (int i=0; i<population.size(); i++) {
+            Network network = new Network(name + "-NN-" + i);
+            network.initializeFromString(population.get(i));
+            this.population.add(network);
+        }
     }
 
     @Override

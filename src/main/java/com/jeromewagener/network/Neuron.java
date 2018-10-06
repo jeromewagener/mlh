@@ -29,7 +29,6 @@ public class Neuron {
         weightedSum -= bias;
 
         this.value = sigmoid(weightedSum);
-        //System.out.println(" >> " + this.value);
     }
 
     @Override
@@ -45,8 +44,7 @@ public class Neuron {
         return Objects.hash(label);
     }
 
-    private static double sigmoid(double x)
-    {
+    public static double sigmoid(double x) {
         return 1 / (1 + Math.exp(-x));
     }
 

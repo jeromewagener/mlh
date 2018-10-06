@@ -1,0 +1,83 @@
+<html>
+
+<head>
+    <style>
+        html, body, div, canvas {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<canvas id="myCanvas" width="1920" height="1024">
+    Your browser does not support the HTML5 canvas tag.
+</canvas>
+
+<script src="Neuron.js"></script>
+<script src="Edge.js"></script>
+
+<script>
+    let neurons=[];
+    let edges=[];
+
+    let canvas = document.getElementById('myCanvas');
+
+    function select(e) {
+        document.title = e.x + " - " + e.y;
+        for (let i=0; i<neurons.length; i++) {
+            if (neurons[i].isAtCoordinates(e.x, e.y)) {
+                neurons[i].highlight(canvas);
+            }
+        }
+    }
+
+    function init() {
+        canvas.onmousedown = select;
+
+        let inputNeurons = [];
+        for (let i = 0; i < 100; i++) {
+            let neuron = new Neuron("Input-" + i, 100, 30 + (i * 10), 3);
+            inputNeurons.push(neuron);
+            neurons.push(neuron);
+        }
+
+        let hiddenNeurons = [];
+        for (i = 0; i < 10; i++) {
+            let neuron = new Neuron("Hidden-" + i, 900, 30 + (i * 110), 3);
+
+            for (let j=0; j<inputNeurons.length; j++) {
+                let edge = new Edge("e1-" + j + "-" + i, inputNeurons[j], neuron);
+                edges.push(edge);
+            }
+
+            hiddenNeurons.push(neuron);
+            neurons.push(neuron);
+        }
+
+        for (i = 0; i < 10; i++) {
+            let neuron = new Neuron("Output-" + i, 1800, 30 + (i * 110), 3);
+
+            for (let j=0; j<hiddenNeurons.length; j++) {
+                let edge = new Edge("e2-" + j + "-" + i, hiddenNeurons[j], neuron);
+                edges.push(edge);
+            }
+
+            neurons.push(neuron);
+        }
+
+        edges.forEach(function (edge) {
+            edge.draw(canvas);
+        });
+
+        neurons.forEach(function (neuron) {
+            neuron.draw(canvas);
+        });
+    }
+
+    init()
+</script>
+
+</body>
+</html>

@@ -4,6 +4,7 @@ import com.jeromewagener.util.TrainingData;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
@@ -28,5 +29,66 @@ public class NetworkTest {
 
         double successRate = successCounter * 1.0d / trainingData.get().size();
         assertEquals(0.17905405405405407, successRate, 0.0);
+    }
+
+    @Test
+    public void verifySuccessRate2() throws IOException {
+        TrainingData trainingData = new TrainingData();
+        trainingData.load();
+
+        Network network = new Network("from-file");
+        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1537992828849.txt");
+
+        ImageCompressor imageCompressor = new ImageCompressor(false);
+
+        int successCounter = 0;
+        for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
+            if (network.calculate(imageCompressor.compress(entry.getKey())).getDetectedNumber() == entry.getValue()) {
+                successCounter++;
+            }
+        }
+
+        double successRate = successCounter * 1.0d / trainingData.get().size();
+        assertEquals(0.22128378378378377, successRate, 0.0);
+    }
+
+    @Test
+    public void checkDistribution() throws IOException {
+        TrainingData trainingData = new TrainingData();
+        trainingData.load();
+
+        Network network = new Network("from-file");
+        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1537992828849.txt");
+
+        ImageCompressor imageCompressor = new ImageCompressor(false);
+
+        HashMap<Integer, Integer> successCounterMap = new HashMap<>();
+        successCounterMap.put(0, 0);
+        successCounterMap.put(1, 0);
+        successCounterMap.put(2, 0);
+        successCounterMap.put(3, 0);
+        successCounterMap.put(4, 0);
+        successCounterMap.put(5, 0);
+        successCounterMap.put(6, 0);
+        successCounterMap.put(7, 0);
+        successCounterMap.put(8, 0);
+        successCounterMap.put(9, 0);
+
+        for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
+            if (network.calculate(imageCompressor.compress(entry.getKey())).getDetectedNumber() == entry.getValue()) {
+                successCounterMap.put(entry.getValue(), (successCounterMap.get(entry.getValue()))+1);
+            }
+        }
+
+        System.out.println();
+    }
+
+    @Test
+    public void testNonTrainingDataNumbers() throws IOException {
+        Network network = new Network("from-file");
+        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1537992828849.txt");
+
+        ImageCompressor imageCompressor = new ImageCompressor(true);
+        System.out.println(network.calculate(imageCompressor.compress("/home/jerome/code/mlh/src/test/resources/0_5.png")).getDetectedNumber());
     }
 }
