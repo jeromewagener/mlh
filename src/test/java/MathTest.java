@@ -13,18 +13,4 @@ public class MathTest {
         assertEquals(0.0d, Neuron.sigmoid(-1000), 0d);
         assertEquals(0.5d, Neuron.sigmoid(0), 0d);
     }
-
-    @Test
-    public void testWeightedSumCalculation() {
-        //Neuron. TODO
-        assertEquals(true, true);
-    }
-
-    @Test
-    public void testAdaptationFactors() {
-        for (int i=0;i<100; i++) {
-            float f = ((new Random()).nextFloat() - 0.5f) / 10f;
-            System.out.println(0.6 + f);
-        }
-    }
 }
