@@ -1,5 +1,7 @@
 package com.jeromewagener.network;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.jeromewagener.util.ImageCompressor;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,9 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 @Getter
 @Setter
@@ -30,10 +30,8 @@ public class Network implements Comparable<Network>{
     /** All neurons are stored in one big hash-map for easy and fast access */
     private Map<String, Neuron> neurons = new HashMap<>();
 
-    private double hiddenLayerBias = 0.0d;
-    private double outputLayerBias = 0.0d;
-    private Double successRate = 0.0d;
-    private Double certainty = 0.0d;
+    private Float successRate = 0.0f;
+    private Float certainty = 0.0f;
     private DecimalFormat decimalFormat = new DecimalFormat("0.000");
 
     /** Create a new network without any neurons or anything else.
@@ -51,101 +49,133 @@ public class Network implements Comparable<Network>{
 
         // add output neurons
         for (int i=0; i<OUTPUT_NEURONS_COUNT; i++) {
-            neurons.put("O-" + i, new Neuron( "O-" + i, Neuron.Type.OUTPUT,null));
+            neurons.put("O" + i, new Neuron( "O" + i, null, random.nextFloat()*10));
         }
 
         // add hidden layer neurons
         for (int i=0; i<HIDDEN_LAYER_NEURONS_COUNT; i++) {
-            Map<Neuron, Double> links = new HashMap<>();
+            Map<Neuron, Float> links = new HashMap<>();
             for (int outputIndex=0; outputIndex<OUTPUT_NEURONS_COUNT; outputIndex++) {
-                links.put(neurons.get("O-" + outputIndex), random.nextDouble());
+                links.put(neurons.get("O" + outputIndex), random.nextFloat());
             }
 
-            neurons.put("HL-" + i, new Neuron( "HL-" + i, Neuron.Type.HIDDEN, links));
+            neurons.put("H" + i, new Neuron( "H" + i, links, random.nextFloat()*10));
         }
 
         // add input neurons
         for (int i = 0; i<INPUT_NEURONS_COUNT; i++) {
-            Map<Neuron, Double> links = new HashMap<>();
+            Map<Neuron, Float> links = new HashMap<>();
             for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
-                links.put(neurons.get("HL-" + hlIndex), random.nextDouble());
+                links.put(neurons.get("H" + hlIndex), random.nextFloat());
             }
 
-            neurons.put("IP-" +i, new Neuron( "IP-" + i, Neuron.Type.INPUT, links));
+            neurons.put("I" +i, new Neuron( "I" + i, links, null));
         }
-
-        outputLayerBias = random.nextDouble()*10;
-        hiddenLayerBias = random.nextDouble()*10;
     }
 
-    public Output calculate(double[] inputVector) {
+    public Output calculate(float[] inputVector) {
+        List<Neuron> outputNeurons = new ArrayList<>();
         for (int i=0; i<inputVector.length; i++) {
-            neurons.get("IP-" + i).value = inputVector[i];
+            neurons.get("I" + i).value = inputVector[i];
+
+            if (i < Network.OUTPUT_NEURONS_COUNT) {
+                outputNeurons.add(neurons.get("O" + i));
+            }
         }
 
         calculateHiddenLayerValues();
         calculateOutputLayerValues();
 
-        // Detect brightest output neuron which indicated which number between 0 and 9 the NN thinks is shown in the image
-        Neuron max = null;
-        for (int i=0; i<10; i++) {
-            //System.out.println(" -> " + neurons.get("O-" + i).label + " - " + neurons.get("O-" + i).value);
+        // first find the best
+        Neuron winnerNeuron = outputNeurons.get(0);
+        for (Neuron outputNeuron : outputNeurons) {
+            if (winnerNeuron.value < outputNeuron.value) {
+                winnerNeuron = outputNeuron;
+            }
+        }
 
-            if (max == null || max.value < neurons.get("O-" + i).value) {
-                max = neurons.get("O-" + i);
+        // now calculate the certainty. Meaning, a good network only highlights the winner and not the other neurons
+        float cost = 0.0f;
+        for (Neuron outputNeuron : outputNeurons) {
+            if (outputNeuron == winnerNeuron) {
+                cost += Math.pow(outputNeuron.value - 1.0, 2);
+            } else {
+                cost += Math.pow(outputNeuron.value, 2);
             }
         }
 
         Output networkOutput = new Output();
-        networkOutput.setDetectedNumber(Integer.valueOf(max.label.split("-")[1]));
-        networkOutput.setCertainty(max.value);
+        networkOutput.setDetectedNumber(Integer.valueOf(winnerNeuron.label.split("O")[1]));
+        networkOutput.setCertainty(cost);
         return networkOutput;
     }
 
     private void calculateHiddenLayerValues() {
-        Map<Neuron, Double> weightedSumLinks = new HashMap<>();
+        Map<Neuron, Float> weightedSumLinks = new HashMap<>();
         for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
             for (int inputIndex=0; inputIndex<INPUT_NEURONS_COUNT; inputIndex++) {
-                weightedSumLinks.put(neurons.get("IP-" + inputIndex), neurons.get("IP-" + inputIndex).links.get(neurons.get("HL-" + hlIndex)));
+                weightedSumLinks.put(neurons.get("I" + inputIndex), neurons.get("I" + inputIndex).links.get(neurons.get("H" + hlIndex)));
             }
 
-            neurons.get("HL-" + hlIndex).calculateWeightedSum(hiddenLayerBias, weightedSumLinks);
+            neurons.get("H" + hlIndex).calculateWeightedSum(weightedSumLinks);
         }
     }
 
     private void calculateOutputLayerValues() {
-        Map<Neuron, Double> weightedSumLinks = new HashMap<>();
+        Map<Neuron, Float> weightedSumLinks = new HashMap<>();
         for (int outputIndex=0; outputIndex<10; outputIndex++) {
             for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
-                weightedSumLinks.put(neurons.get("HL-" + hlIndex), neurons.get("HL-" + hlIndex).links.get(neurons.get("O-" + outputIndex)));
+                weightedSumLinks.put(neurons.get("H" + hlIndex), neurons.get("H" + hlIndex).links.get(neurons.get("O" + outputIndex)));
             }
 
-            neurons.get("O-" + outputIndex).calculateWeightedSum(outputLayerBias, weightedSumLinks);
+            neurons.get("O" + outputIndex).calculateWeightedSum(weightedSumLinks);
         }
     }
 
     public String printNetwork(boolean writeToFile) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("let network = {\n");
 
-        stringBuilder.append("hiddenLayerBias=").append(hiddenLayerBias).append("\n");
-        stringBuilder.append("outputLayerBias=").append(outputLayerBias).append("\n");
-
+        int neuronCounter = 0;
         for (Neuron neuron : neurons.values()) {
+            stringBuilder.append("\"" + neuron.label + "\" : " + "{");
 
-            stringBuilder.append(neuron.label).append(";").append(neuron.type).append(";");
+            stringBuilder.append("\"value\" : " + decimalFormat.format(neuron.value));
+
+            if (neuron.bias != null) {
+                stringBuilder.append(", \"bias\" : " + decimalFormat.format(neuron.bias));
+            }
 
             if (neuron.links != null) {
-                for (Map.Entry<Neuron, Double> entry : neuron.links.entrySet()) {
-                    stringBuilder.append(entry.getKey().label).append("#").append(decimalFormat.format(entry.getValue())).append("/");
+                stringBuilder.append(", \"links\" : {");
+                int linkCounter = 0;
+                for (Map.Entry<Neuron, Float> entry : neuron.links.entrySet()) {
+                    stringBuilder.append("\"" + entry.getKey().label + "\"").append(":").append(decimalFormat.format(entry.getValue()));
+
+                    if (linkCounter<neuron.links.size()-1) {
+                        stringBuilder.append(",");
+                    }
+
+                    linkCounter++;
                 }
-                stringBuilder.append("\n");
-            } else {
-                stringBuilder.append("\n");
+                stringBuilder.append("}");
             }
+
+            stringBuilder.append("}");
+
+            if (neuronCounter<neurons.size()-1) {
+                stringBuilder.append(",");
+            }
+
+            stringBuilder.append("\n");
+
+            neuronCounter++;
         }
 
+        stringBuilder.append("}");
+
         if (writeToFile) {
-            try (PrintWriter out = new PrintWriter("/home/jerome/nn/nn-" + System.currentTimeMillis() + ".txt")) {
+            try (PrintWriter out = new PrintWriter("/home/jerome/code/mlh/src/main/resources/visualization/NetworkData.js")) {
                 out.println(stringBuilder.toString());
             }
         }
@@ -154,38 +184,34 @@ public class Network implements Comparable<Network>{
     }
 
     public void initializeFromString(String text) {
-        String[] lines = text.split("\n");
+        String networkJson = text.replace("let network = ", "");
+        JsonObject jsonObject = new JsonParser().parse(networkJson).getAsJsonObject();
 
-        for (String line : lines) {
-            if (line.startsWith("hiddenLayerBias")) {
-                hiddenLayerBias = Double.valueOf(line.split("=")[1]);
-                continue;
-            } else if (line.startsWith("outputLayerBias")) {
-                outputLayerBias = Double.valueOf(line.split("=")[1]);
-                continue;
-            }
-
-            String[] neuronComponents = line.split(";");
-
-            if (neuronComponents.length < 2) {
-                break;
-            }
-
-            Neuron neuron = new Neuron(neuronComponents[0], Neuron.Type.valueOf(neuronComponents[1]), new HashMap<>());
-            neurons.put(neuronComponents[0], neuron);
+        // Read and create output neurons first as they will be needed for the links from the hidden layer neurons
+        for (int i=0; i<Network.OUTPUT_NEURONS_COUNT; i++) {
+            neurons.put("O" + i, new Neuron("O" + i, null, jsonObject.get("O" + i).getAsJsonObject().get("bias").getAsFloat()));
         }
 
-        for (String line : lines) {
-            String[] neuronComponents = line.split(";");
+        // Read and create hidden layer neurons second and link to the output neurons using the link values from the json
+        for (int i=0; i<Network.HIDDEN_LAYER_NEURONS_COUNT; i++) {
+            Map<Neuron, Float> links = new HashMap<>();
+            neurons.put("H" + i, new Neuron("H" + i, links, jsonObject.get("H" + i).getAsJsonObject().get("bias").getAsFloat()));
 
-            if (neuronComponents.length == 3) {
-                String[] allLinkBundles = neuronComponents[2].split("/");
-                for (String linkBundle : allLinkBundles) {
-                    String[] linkComponents = linkBundle.split("#");
-                    neurons.get(neuronComponents[0]).links.put(neurons.get(linkComponents[0]), Double.valueOf(linkComponents[1]));
-                }
+            for (int j=0; j<Network.OUTPUT_NEURONS_COUNT; j++) {
+                links.put(neurons.get("O" + j), jsonObject.get("H" + i).getAsJsonObject().get("links").getAsJsonObject().get("O" + j).getAsFloat());
             }
         }
+
+        // Read and create input neurons last and link to the hidden layer neurons using the link values from the json
+        for (int i=0; i<Network.INPUT_NEURONS_COUNT; i++) {
+            Map<Neuron, Float> links = new HashMap<>();
+            neurons.put("I" + i, new Neuron("I" + i, links, null));
+
+            for (int j=0; j<Network.HIDDEN_LAYER_NEURONS_COUNT; j++) {
+                links.put(neurons.get("H" + j), jsonObject.get("I" + i).getAsJsonObject().get("links").getAsJsonObject().get("H" + j).getAsFloat());
+            }
+        }
+
     }
 
     public void initializeFromFilePath(String filePath) throws IOException {
@@ -195,23 +221,15 @@ public class Network implements Comparable<Network>{
 
     @Override
     public int compareTo(Network o) {
-        int successRateComparison = o.successRate.compareTo(this.successRate);
-        if (successRateComparison == 0) {
-            return o.certainty.compareTo(this.certainty);
-        }
-        return successRateComparison;
+        return o.certainty.compareTo(this.certainty);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o instanceof Network) {
             Network other = (Network) o;
+            return other.certainty.equals(this.certainty);
 
-            if (other.successRate.equals(this.successRate)) {
-                return other.certainty.equals(this.certainty);
-            } else {
-                return false;
-            }
         } else {
             return false;
         }
@@ -227,7 +245,7 @@ public class Network implements Comparable<Network>{
     @Setter
     public class Output {
         private int detectedNumber;
-        private double certainty;
+        private float certainty;
     }
 }
 

@@ -15,14 +15,14 @@ public class ImageCompressor {
     public static final int IMAGE_HEIGHT = 10;
     private static final int HIGH_ACTIVATION_THRESHOLD = 235;
     private static final int LOW_ACTIVATION_THRESHOLD = 250;
-    private static HashMap<String, double[]> CACHE = new HashMap<>();
+    private static HashMap<String, float[]> CACHE = new HashMap<>();
     private boolean visualize;
 
     public ImageCompressor(boolean visualize) {
         this.visualize = visualize;
     }
 
-    public double[] compress(String fileName) throws IOException {
+    public float[] compress(String fileName) throws IOException {
         if (CACHE.get(fileName) == null) {
             BufferedImage image = ImageIO.read(new File(fileName));
             ImageIcon icon = new ImageIcon(image);
@@ -32,7 +32,7 @@ public class ImageCompressor {
             BufferedImage scaledImage = getScaledImage(image);
             WritableRaster raster = scaledImage.getRaster();
 
-            double[] inputVector = new double[IMAGE_WIDTH * IMAGE_HEIGHT];
+            float[] inputVector = new float[IMAGE_WIDTH * IMAGE_HEIGHT];
             for (int col = 0; col < IMAGE_HEIGHT; col++) {
                 for (int row = 0; row < IMAGE_WIDTH; row++) {
                     int[] pixels = raster.getPixel(row, col, (int[]) null);
@@ -48,7 +48,7 @@ public class ImageCompressor {
                     }
 
                     int averagePixelColors = (int) ((pixels[0] + pixels[1] + pixels[2]) / 3.0);
-                    double normalizedAveragePixelColors = 1 - (averagePixelColors / 255.0);
+                    float normalizedAveragePixelColors = 1 - (averagePixelColors / 255.0f);
 
                     DecimalFormat decimalFormat = new DecimalFormat();
                     decimalFormat.setMaximumFractionDigits(2);

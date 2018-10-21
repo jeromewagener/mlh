@@ -3,6 +3,7 @@ package com.jeromewagener;
 import com.jeromewagener.network.Genetics;
 import com.jeromewagener.network.Network;
 import com.jeromewagener.util.Evaluator;
+import com.jeromewagener.util.ImageCompressor;
 import com.jeromewagener.util.TrainingData;
 import lombok.Getter;
 
@@ -16,7 +17,8 @@ import java.util.Random;
 @Getter
 public class TrainerThread extends Thread {
 
-    static int MAX_GENERATIONS_COUNT = 50;
+    public static final int MAX_POPULATION_SIZE = 12;
+    static int MAX_GENERATIONS_COUNT = 12000;
 
     private String winnerNetwork;
     private ArrayList<Network> population;
@@ -46,7 +48,21 @@ public class TrainerThread extends Thread {
         // Create a random population if we do not have a population to start with
         if (population == null) {
             population = new ArrayList<>();
-            for (int i = 0; i < 20; i++) {
+
+            // TODO remove
+            try {
+                Network network = new Network("from-file");
+                network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/NetworkData-0.75.js");
+                this.population.add(network);
+                Network network2 = new Network("from-file");
+                network2.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/NetworkData-0.70.js");
+                this.population.add(network2);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // TODO END REMOVE
+
+            for (int i = 0; i < MAX_POPULATION_SIZE; i++) {
                 Network network = new Network("NN-" + i, random);
                 population.add(network);
             }
@@ -54,15 +70,11 @@ public class TrainerThread extends Thread {
 
         // Let evolution do its magic
         for (int generation = 1; generation <= MAX_GENERATIONS_COUNT; generation++) {
-            if (generation == 1 || generation % 10 == 0 || generation == MAX_GENERATIONS_COUNT) {
-                System.out.println("--------------------------");
-                System.out.println(" >> Start Generation: " + generation);
-                System.out.println("--------------------------");
-            }
+
 
             for (Network network : population) {
                 int successCounter = 0;
-                double successCertainty = 0.0d;
+                float successCertainty = 0.0f;
 
                 for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
                     Evaluator evaluator = new Evaluator();
@@ -81,9 +93,35 @@ public class TrainerThread extends Thread {
                     }
                 }
 
-                network.setSuccessRate((successCounter / (trainingData.get().size() * 1d)) * 100d);
-                network.setCertainty(successCertainty / (trainingData.get().size() * 1d));
+                network.setSuccessRate((successCounter / (trainingData.get().size() * 1f)) * 100f);
+                network.setCertainty(successCertainty);
             }
+
+            Collections.sort(population);
+            Collections.reverse(population);
+
+            try {
+                ImageCompressor imageCompressor = new ImageCompressor(false);
+                population.get(0).calculate(imageCompressor.compress(trainingData.get().keySet().iterator().next()));
+                population.get(0).printNetwork(true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            //if (generation == 1 || generation % 10 == 0 || generation == MAX_GENERATIONS_COUNT) {
+                System.out.println("--------------------------");
+                System.out.println(" >> Current Generation: " + generation);
+                System.out.println("--------------------------");
+
+                for (Network network : population) {
+                    try {
+                        System.out.println(network.getName() + " >> Success Rate: " + network.getSuccessRate() + "% >> Avg. Certainty: " + network.getCertainty() + "% >> HashCode: " + network.printNetwork(false).hashCode());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                System.out.println();
+            //}
 
             try {
                 Genetics.evolve(generation, population, random);
@@ -94,6 +132,7 @@ public class TrainerThread extends Thread {
 
         // At the end, we sort by best to worst network from the latest population and we print the best network to a file
         Collections.sort(population);
+        Collections.reverse(population);
         try {
             winnerNetwork = population.get(0).printNetwork(false);
         } catch (IOException e) {

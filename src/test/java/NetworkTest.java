@@ -4,6 +4,7 @@ import com.jeromewagener.util.TrainingData;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class NetworkTest {
             }
         }
 
-        double successRate = successCounter * 1.0d / trainingData.get().size();
+        float successRate = successCounter * 1.0f / trainingData.get().size();
         assertEquals(0.17905405405405407, successRate, 0.0);
     }
 
@@ -37,7 +38,7 @@ public class NetworkTest {
         trainingData.load();
 
         Network network = new Network("from-file");
-        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1537992828849.txt");
+        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1538862860382.txt");
 
         ImageCompressor imageCompressor = new ImageCompressor(false);
 
@@ -48,7 +49,7 @@ public class NetworkTest {
             }
         }
 
-        double successRate = successCounter * 1.0d / trainingData.get().size();
+        float successRate = successCounter * 1.0f / trainingData.get().size();
         assertEquals(0.22128378378378377, successRate, 0.0);
     }
 
@@ -58,7 +59,7 @@ public class NetworkTest {
         trainingData.load();
 
         Network network = new Network("from-file");
-        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1537992828849.txt");
+        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1538862860382.txt");
 
         ImageCompressor imageCompressor = new ImageCompressor(false);
 
@@ -84,11 +85,53 @@ public class NetworkTest {
     }
 
     @Test
+    public void checkCalculations() throws IOException {
+        TrainingData trainingData = new TrainingData();
+        trainingData.load();
+
+        Network network = new Network("from-file");
+        network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1539114815655.txt");
+
+        ImageCompressor imageCompressor = new ImageCompressor(true);
+
+        Map.Entry<String, Integer> firstTrainingSample = trainingData.get().entrySet().iterator().next();
+        network.calculate(imageCompressor.compress(firstTrainingSample.getKey()));
+    }
+
+    @Test
     public void testNonTrainingDataNumbers() throws IOException {
         Network network = new Network("from-file");
         network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/nn-1537992828849.txt");
 
         ImageCompressor imageCompressor = new ImageCompressor(true);
         System.out.println(network.calculate(imageCompressor.compress("/home/jerome/code/mlh/src/test/resources/0_5.png")).getDetectedNumber());
+    }
+
+    @Test
+    public void testJsonGeneration() throws IOException {
+        Network network = new Network("testNetwork", new SecureRandom());
+
+        TrainingData trainingData = new TrainingData();
+        trainingData.load();
+
+        ImageCompressor imageCompressor = new ImageCompressor(true);
+        network.calculate(imageCompressor.compress(trainingData.get().keySet().iterator().next()));
+
+        network.printNetwork(true);
+    }
+
+    @Test
+    public void readJsonGeneration() throws IOException {
+        Network network = new Network("testNetwork");
+        network.initializeFromFilePath("/home/jerome/code/mlh/src/main/resources/visualization/NetworkData.js");
+        network.printNetwork(true);
+
+        /*TrainingData trainingData = new TrainingData();
+        trainingData.load();
+
+        ImageCompressor imageCompressor = new ImageCompressor(true);
+        network.calculate(imageCompressor.compress(trainingData.get().keySet().iterator().next()));
+
+        network.printNetwork(true);*/
     }
 }
