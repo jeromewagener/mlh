@@ -9,7 +9,7 @@ import java.io.IOException;
 public class Evaluator {
     private ImageCompressor imageCompressor = new ImageCompressor(false);
     private boolean evaluatedAsCorrect;
-    private float certainty;
+    private float meanSquaredError;
 
     public void evaluate(String fileName, int realValue, Network network) throws IOException {
         float[] inputVector = imageCompressor.compress(fileName);
@@ -17,7 +17,7 @@ public class Evaluator {
         if (network != null) {
             Network.Output networkOutput = network.calculate(inputVector);
             evaluatedAsCorrect = networkOutput.getDetectedNumber() == realValue;
-            certainty = networkOutput.getCertainty();
+            meanSquaredError = networkOutput.getMeanSquaredError();
         }
     }
 }

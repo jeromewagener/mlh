@@ -69,7 +69,7 @@ public class Genetics {
         }
     }
 
-    public static void evolve(int generation, ArrayList<Network> population, Random random) throws IOException {
+    public static void evolve(String name, int generation, ArrayList<Network> population, Random random) throws IOException {
         int halfPopulationSize = Math.round(TrainerThread.MAX_POPULATION_SIZE / 2.0f);
 
         // drop all low performers
@@ -80,13 +80,13 @@ public class Genetics {
 
         // add fresh blood
         for (int i=0; i<4; i++) {
-            population.add(new Network("G'"+ generation + "-Fresh-" + i, random));
+            population.add(new Network(name + "-G'"+ generation + "-Fresh-" + i, random));
         }
 
         // breed
         int popSize = population.size();
         for (int i=0; i<popSize; i++) {
-            Network network = Genetics.breed("G"+ generation + "-Breed-" + i, population.get(random.nextInt(population.size())), population.get(random.nextInt(population.size())));
+            Network network = Genetics.breed(name + "-G"+ generation + "-Breed-" + i, population.get(random.nextInt(population.size())), population.get(random.nextInt(population.size())));
             Genetics.mutate(network);
             population.add(network);
         }

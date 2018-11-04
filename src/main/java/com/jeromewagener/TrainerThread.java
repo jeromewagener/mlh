@@ -13,22 +13,30 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
+import java.util.logging.Logger;
 
 @Getter
 public class TrainerThread extends Thread {
 
     public static final int MAX_POPULATION_SIZE = 12;
-    static int MAX_GENERATIONS_COUNT = 2000;
+    static int MAX_GENERATIONS_COUNT = 20;
+    Logger LOGGER;
 
     private String winnerNetwork;
     private ArrayList<Network> population;
+    private long startTime;
+    private TrainingData trainingData;
 
-    public TrainerThread(String name) {
+    public TrainerThread(Logger LOGGER, TrainingData trainingData, String name) {
         super(name);
+        this.trainingData = trainingData;
+        this.LOGGER = LOGGER;
     }
 
-    public TrainerThread(String name, ArrayList<String> population) {
+    public TrainerThread(Logger LOGGER, TrainingData trainingData, String name, ArrayList<String> population) {
         super(name);
+        this.trainingData = trainingData;
+        this.LOGGER = LOGGER;
 
         this.population = new ArrayList<>();
         for (int i=0; i<population.size(); i++) {
@@ -40,10 +48,8 @@ public class TrainerThread extends Thread {
 
     @Override
     public void run() {
+        startTime = System.currentTimeMillis();
         Random random = new SecureRandom();
-
-        TrainingData trainingData = new TrainingData();
-        trainingData.load();
 
         // Create a random population if we do not have a population to start with
         if (population == null) {
@@ -61,7 +67,7 @@ public class TrainerThread extends Thread {
 
             for (Network network : population) {
                 int successCounter = 0;
-                float successCertainty = 0.0f;
+                float meanSquaredError = 0.0f;
 
                 for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
                     Evaluator evaluator = new Evaluator();
@@ -76,42 +82,25 @@ public class TrainerThread extends Thread {
 
                     if (evaluator.isEvaluatedAsCorrect()) {
                         successCounter++;
-                        successCertainty += evaluator.getCertainty();
+                        meanSquaredError += evaluator.getMeanSquaredError();
                     }
                 }
 
                 network.setSuccessRate((successCounter / (trainingData.get().size() * 1f)) * 100f);
-                network.setCertainty(successCertainty);
+                network.setMeanSquaredError(meanSquaredError);
             }
 
             Collections.sort(population);
-            //Collections.reverse(population);
 
             try {
                 ImageCompressor imageCompressor = new ImageCompressor(false);
                 population.get(0).calculate(imageCompressor.compress(trainingData.get().keySet().iterator().next()));
-                population.get(0).printNetwork(true);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            //if (generation == 1 || generation % 10 == 0 || generation == MAX_GENERATIONS_COUNT) {
-                System.out.println("--------------------------");
-                System.out.println(" >> Current Generation: " + generation);
-                System.out.println("--------------------------");
-
-                for (Network network : population) {
-                    try {
-                        System.out.println(network.getName() + " >> Success Rate: " + network.getSuccessRate() + "% >> Avg. Certainty: " + network.getCertainty() + "% >> HashCode: " + network.printNetwork(false).hashCode());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                System.out.println();
-            //}
-
             try {
-                Genetics.evolve(generation, population, random);
+                Genetics.evolve(getName(), generation, population, random);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -122,6 +111,11 @@ public class TrainerThread extends Thread {
         //Collections.reverse(population);
         try {
             winnerNetwork = population.get(0).printNetwork(false);
+            LOGGER.info(MAX_GENERATIONS_COUNT + " generations with a population of " + MAX_POPULATION_SIZE + " executed in " + (System.currentTimeMillis() - startTime) + "ms" +
+                    " >> Winner: " + population.get(0).getName() +
+                    " >> Success Rate: " + population.get(0).getSuccessRate() + "%" +
+                    " >> Mean squared error: " + population.get(0).getMeanSquaredError() +
+                    " >> HashCode: " + population.get(0).printNetwork(false).hashCode());
         } catch (IOException e) {
             e.printStackTrace();
         }

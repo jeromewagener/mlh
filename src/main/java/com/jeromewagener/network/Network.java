@@ -31,7 +31,7 @@ public class Network implements Comparable<Network>{
     private Map<String, Neuron> neurons = new HashMap<>();
 
     private Float successRate = 0.0f;
-    private Float certainty = 0.0f;
+    private Float meanSquaredError = 0.0f;
     private DecimalFormat decimalFormat = new DecimalFormat("0.000");
 
     /** Create a new network without any neurons or anything else.
@@ -94,19 +94,19 @@ public class Network implements Comparable<Network>{
             }
         }
 
-        // now calculate the certainty. Meaning, a good network only highlights the winner and not the other neurons
-        float cost = 0.0f;
+        // now calculate the meanSquaredError. Meaning, a good network only highlights the winner and not the other neurons
+        float meanSquaredError = 0.0f;
         for (Neuron outputNeuron : outputNeurons) {
             if (outputNeuron == winnerNeuron) {
-                cost += Math.pow(outputNeuron.value - 1.0, 2);
+                meanSquaredError += Math.pow(outputNeuron.value - 1.0, 2);
             } else {
-                cost += Math.pow(outputNeuron.value, 2);
+                meanSquaredError += Math.pow(outputNeuron.value, 2);
             }
         }
 
         Output networkOutput = new Output();
         networkOutput.setDetectedNumber(Integer.valueOf(winnerNeuron.label.split("O")[1]));
-        networkOutput.setCertainty(cost);
+        networkOutput.setMeanSquaredError(meanSquaredError);
         return networkOutput;
     }
 
@@ -175,7 +175,7 @@ public class Network implements Comparable<Network>{
         stringBuilder.append("}");
 
         if (writeToFile) {
-            try (PrintWriter out = new PrintWriter("/home/jerome/code/mlh/src/main/resources/visualization/NetworkData.js")) {
+            try (PrintWriter out = new PrintWriter(System.getProperty("user.home") + "/NetworkData.js")) {
                 out.println(stringBuilder.toString());
             }
         }
@@ -226,7 +226,7 @@ public class Network implements Comparable<Network>{
         if (successComparison != 0) {
             return successComparison;
         } else {
-            return o.certainty.compareTo(this.certainty) * -1;
+            return o.meanSquaredError.compareTo(this.meanSquaredError) * -1;
         }
     }
 
@@ -234,7 +234,7 @@ public class Network implements Comparable<Network>{
     public boolean equals(Object o) {
         if (o instanceof Network) {
             Network other = (Network) o;
-            return other.successRate.equals(this.successRate) && other.certainty.equals(this.certainty);
+            return other.successRate.equals(this.successRate) && other.meanSquaredError.equals(this.meanSquaredError);
 
         } else {
             return false;
@@ -244,14 +244,14 @@ public class Network implements Comparable<Network>{
 
     @Override
     public int hashCode() {
-        return successRate.hashCode() + certainty.hashCode();
+        return successRate.hashCode() + meanSquaredError.hashCode();
     }
 
     @Getter
     @Setter
     public class Output {
         private int detectedNumber;
-        private float certainty;
+        private float meanSquaredError;
     }
 }
 
