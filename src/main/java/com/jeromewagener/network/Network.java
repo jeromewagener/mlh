@@ -221,14 +221,20 @@ public class Network implements Comparable<Network>{
 
     @Override
     public int compareTo(Network o) {
-        return o.certainty.compareTo(this.certainty);
+        int successComparison = o.successRate.compareTo(this.successRate);
+
+        if (successComparison != 0) {
+            return successComparison;
+        } else {
+            return o.certainty.compareTo(this.certainty) * -1;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
         if (o instanceof Network) {
             Network other = (Network) o;
-            return other.certainty.equals(this.certainty);
+            return other.successRate.equals(this.successRate) && other.certainty.equals(this.certainty);
 
         } else {
             return false;

@@ -9,13 +9,13 @@ import java.util.Collections;
 
 public class MultiThreadedTrainer {
 
-    public static final int NUMBER_OF_THREADS = 8;
+    public static final int NUMBER_OF_THREADS = 4;
 
     public static void main(String[] argv) throws IOException, InterruptedException {
         ArrayList<TrainerThread> trainerThreads = new ArrayList<>();
         ArrayList<String> winnerPopulation = new ArrayList<>();
 
-        for (int gen=0; gen<10; gen++) {
+        for (int gen=0; gen<15; gen++) {
 
             // remove old threads if there are any as we will run into an
             // IllegalThreadStateException when trying to restart them
@@ -59,7 +59,6 @@ public class MultiThreadedTrainer {
         }
 
         Collections.sort(bestNetworks);
-        Collections.reverse(bestNetworks);
         bestNetworks.get(0).printNetwork(true);
     }
 }

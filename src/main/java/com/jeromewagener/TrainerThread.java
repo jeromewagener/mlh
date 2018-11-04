@@ -18,7 +18,7 @@ import java.util.Random;
 public class TrainerThread extends Thread {
 
     public static final int MAX_POPULATION_SIZE = 12;
-    static int MAX_GENERATIONS_COUNT = 12000;
+    static int MAX_GENERATIONS_COUNT = 2000;
 
     private String winnerNetwork;
     private ArrayList<Network> population;
@@ -48,19 +48,6 @@ public class TrainerThread extends Thread {
         // Create a random population if we do not have a population to start with
         if (population == null) {
             population = new ArrayList<>();
-
-            // TODO remove
-            try {
-                Network network = new Network("from-file");
-                network.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/NetworkData-0.75.js");
-                this.population.add(network);
-                Network network2 = new Network("from-file");
-                network2.initializeFromFilePath("/home/jerome/code/mlh/src/test/resources/NetworkData-0.70.js");
-                this.population.add(network2);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            // TODO END REMOVE
 
             for (int i = 0; i < MAX_POPULATION_SIZE; i++) {
                 Network network = new Network("NN-" + i, random);
@@ -98,7 +85,7 @@ public class TrainerThread extends Thread {
             }
 
             Collections.sort(population);
-            Collections.reverse(population);
+            //Collections.reverse(population);
 
             try {
                 ImageCompressor imageCompressor = new ImageCompressor(false);
@@ -132,7 +119,7 @@ public class TrainerThread extends Thread {
 
         // At the end, we sort by best to worst network from the latest population and we print the best network to a file
         Collections.sort(population);
-        Collections.reverse(population);
+        //Collections.reverse(population);
         try {
             winnerNetwork = population.get(0).printNetwork(false);
         } catch (IOException e) {

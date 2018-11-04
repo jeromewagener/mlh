@@ -14,8 +14,8 @@ public class Genetics {
         String[] network1AsString = network1.printNetwork(false).split("\n");
         String[] network2AsString = network2.printNetwork(false).split("\n");
 
-        int min = -1;
-        int max = -1;
+        int min;
+        int max;
         do {
             min = (new Random()).nextInt(network1AsString.length);
             max = (new Random()).nextInt(network1AsString.length);
@@ -26,9 +26,6 @@ public class Genetics {
             max = min;
             min = tmp;
         }
-
-        //System.err.println("network1 " + network1.printNetwork(false).hashCode() + " network2 " + network2.printNetwork(false).hashCode());
-        //System.err.println("max " + max + " min " + min);
 
         for (int i=0; i<min; i++) {
             newNetwork.append(network1AsString[i]).append("\n");
@@ -46,19 +43,6 @@ public class Genetics {
     }
 
     private static void mutate(Network network) {
-        /*double mutationFactor = ((new Random()).nextDouble() - 0.5d) / 10.0d;
-
-        for (Map.Entry<String, Neuron> neuron : network.getNeurons().entrySet()) {
-            neuron.getValue().value = (neuron.getValue().value - mutationFactor);
-            network.setHiddenLayerBias((network.getHiddenLayerBias() - mutationFactor));
-            network.setOutputLayerBias((network.getOutputLayerBias() - mutationFactor));
-
-            for (Map.Entry<Neuron, Double> entry : neuron.getValue().links.entrySet()) {
-                entry.setValue(entry.getValue() - mutationFactor);
-            }
-        }*/
-
-        // TODO
         Random generator = new Random();
         Object[] values = network.getNeurons().keySet().toArray();
         Object randomKey = values[generator.nextInt(values.length)];
@@ -83,20 +67,10 @@ public class Genetics {
 
             links.put((Neuron) randomLinkKey, newValue);
         }
-        /*if (links != null) {
-            for (Map.Entry<Neuron, Float> entry : links.entrySet()) {
-                entry.setValue(entry.getValue() * ((new Random()).nextFloat() - 0.5f) / 10f);
-            }
-        }*/
     }
 
     public static void evolve(int generation, ArrayList<Network> population, Random random) throws IOException {
-
-
-        // order population
-
         int halfPopulationSize = Math.round(TrainerThread.MAX_POPULATION_SIZE / 2.0f);
-        int quarterPopulationSize = Math.round(TrainerThread.MAX_POPULATION_SIZE / 4.0f);
 
         // drop all low performers
         int populationSize = population.size();
@@ -105,24 +79,16 @@ public class Genetics {
         }
 
         // add fresh blood
-        // for (int i=0; i<quarterPopulationSize; i++) {
-        //     population.add(new Network("G'"+ generation + "-Fresh-" + i, random));
-        // }
+        for (int i=0; i<4; i++) {
+            population.add(new Network("G'"+ generation + "-Fresh-" + i, random));
+        }
 
         // breed
-        for (int i=0; i<6; i++) {
+        int popSize = population.size();
+        for (int i=0; i<popSize; i++) {
             Network network = Genetics.breed("G"+ generation + "-Breed-" + i, population.get(random.nextInt(population.size())), population.get(random.nextInt(population.size())));
             Genetics.mutate(network);
             population.add(network);
         }
-//        for (int i=1; i<6; i++) {
-//            Network network = Genetics.breed("G"+ generation + "-" + i, population.get(i-10), population.get(i));
-//            Genetics.mutate(network);
-//            population.add(network);
-//        }
-
-//        HashSet<Network> popSet = new HashSet<>(population);
-//        population.clear();
-//        population.addAll(popSet);
     }
 }
