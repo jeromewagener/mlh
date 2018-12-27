@@ -1,4 +1,4 @@
-# My Machine Learning Hello World
+# My Machine Learning "Hello World"
 
 As it turns out, the "Hello World" of the machine learning community is to write an program that 
 is able correctly identify handwritten numbers. 
