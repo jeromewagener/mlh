@@ -2,6 +2,7 @@ package com.jeromewagener;
 
 import com.jeromewagener.network.Network;
 import com.jeromewagener.util.TrainingData;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,17 +13,15 @@ import java.util.logging.SimpleFormatter;
 
 public class MultiThreadedTrainer {
     private static final Logger LOGGER = Logger.getLogger("MyLog");
-    public static final int NUMBER_OF_THREADS = 4;
+    private static final int NUMBER_OF_THREADS = 4;
     private static final int MAX_ROUNDS = 15;
 
-    public static void main(String[] argv) throws IOException, InterruptedException {
+    public void run(TrainingData trainingData) throws IOException, InterruptedException {
         FileHandler fileHandler = new FileHandler(System.getProperty("user.home") + "/running.log");
         LOGGER.addHandler(fileHandler);
         LOGGER.setUseParentHandlers(false);
         SimpleFormatter formatter = new SimpleFormatter();
         fileHandler.setFormatter(formatter);
-
-        TrainingData trainingData = new TrainingData();
         trainingData.load();
 
         ArrayList<TrainerThread> trainerThreads = new ArrayList<>();

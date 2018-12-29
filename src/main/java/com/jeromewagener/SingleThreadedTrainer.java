@@ -11,14 +11,12 @@ import java.util.logging.SimpleFormatter;
 public class SingleThreadedTrainer {
     private static final Logger LOGGER = Logger.getLogger("MyLog");
 
-    public static void main(String[] argv) throws IOException, InterruptedException {
+    public void run(TrainingData trainingData) throws IOException, InterruptedException {
         FileHandler fileHandler = new FileHandler(System.getProperty("user.home") + "/running.log");
         LOGGER.addHandler(fileHandler);
         LOGGER.setUseParentHandlers(false);
         SimpleFormatter formatter = new SimpleFormatter();
         fileHandler.setFormatter(formatter);
-
-        TrainingData trainingData = new TrainingData();
         trainingData.load();
 
         TrainerThread trainerThread = new TrainerThread(LOGGER, trainingData, "SingleThreadedTrainer");

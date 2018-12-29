@@ -3,7 +3,6 @@ package com.jeromewagener;
 import com.jeromewagener.network.Genetics;
 import com.jeromewagener.network.Network;
 import com.jeromewagener.util.Evaluator;
-import com.jeromewagener.util.ImageCompressor;
 import com.jeromewagener.util.TrainingData;
 import lombok.Getter;
 
@@ -11,15 +10,14 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
 
 @Getter
 public class TrainerThread extends Thread {
 
-    public static final int MAX_POPULATION_SIZE = 12;
-    static int MAX_GENERATIONS_COUNT = 20;
+    public static final int MAX_POPULATION_SIZE = 200;
+    static int MAX_GENERATIONS_COUNT = 100;
     Logger LOGGER;
 
     private String winnerNetwork;
@@ -27,13 +25,13 @@ public class TrainerThread extends Thread {
     private long startTime;
     private TrainingData trainingData;
 
-    public TrainerThread(Logger LOGGER, TrainingData trainingData, String name) {
+    TrainerThread(Logger LOGGER, TrainingData trainingData, String name) {
         super(name);
         this.trainingData = trainingData;
         this.LOGGER = LOGGER;
     }
 
-    public TrainerThread(Logger LOGGER, TrainingData trainingData, String name, ArrayList<String> population) {
+    TrainerThread(Logger LOGGER, TrainingData trainingData, String name, ArrayList<String> population) {
         super(name);
         this.trainingData = trainingData;
         this.LOGGER = LOGGER;
@@ -69,16 +67,9 @@ public class TrainerThread extends Thread {
                 int successCounter = 0;
                 float meanSquaredError = 0.0f;
 
-                for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
+                for (TrainingData.Structure entry : trainingData.get()) {
                     Evaluator evaluator = new Evaluator();
-                    try {
-                        evaluator.evaluate(
-                                entry.getKey(),
-                                entry.getValue(),
-                                network);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    evaluator.evaluate(entry.getInputVector(), entry.getExpectedOutputNeuron(), network);
 
                     if (evaluator.isEvaluatedAsCorrect()) {
                         successCounter++;
@@ -88,16 +79,25 @@ public class TrainerThread extends Thread {
 
                 network.setSuccessRate((successCounter / (trainingData.get().size() * 1f)) * 100f);
                 network.setMeanSquaredError(meanSquaredError);
+
+                try {
+                    LOGGER.info("Intermediate logging" +
+                            " >> Name: " + network.getName() + "%" +
+                            " >> Success Rate: " + network.getSuccessRate() + "%" +
+                            " >> Mean squared error: " + network.getMeanSquaredError() +
+                            " >> HashCode: " + network.printNetwork(false).hashCode());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             Collections.sort(population);
 
-            try {
-                ImageCompressor imageCompressor = new ImageCompressor(false);
-                population.get(0).calculate(imageCompressor.compress(trainingData.get().keySet().iterator().next()));
+            /*try {
+                population.get(0).calculate(TrainingData);
             } catch (IOException e) {
                 e.printStackTrace();
-            }
+            }*/
 
             try {
                 Genetics.evolve(getName(), generation, population, random);

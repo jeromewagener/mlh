@@ -16,15 +16,15 @@ class Edge {
 
         //context.strokeStyle="#" + hexValue + hexValue + hexValue;
 
-        if (this.value > 0.95) {
+        //if (this.value > 0.65) {
             context.strokeStyle="#" + hexValue + hexValue + hexValue;
             let xPos = this.stopNeuron.x - ((this.stopNeuron.x-this.startNeuron.x) / 2);
             let yPos = this.stopNeuron.y - ((this.stopNeuron.y-this.startNeuron.y) / 2);
 
             context.fillText(this.value, xPos, yPos);
-        } else {
-            context.strokeStyle="#e9e0e5";
-        }
+        //} else {
+        //    context.strokeStyle="#e9e0e5";
+        //}
 
         context.beginPath();
         context.moveTo(this.startNeuron.x, this.startNeuron.y);

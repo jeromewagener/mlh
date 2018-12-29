@@ -2,7 +2,6 @@ package com.jeromewagener.network;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.jeromewagener.util.ImageCompressor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,11 +17,11 @@ import java.util.*;
 @Setter
 public class Network implements Comparable<Network>{
     /** Total number of input neurons. Each input neuron represents one pixel of the scale down handwritten number image */
-    private static final int INPUT_NEURONS_COUNT = ImageCompressor.IMAGE_WIDTH * ImageCompressor.IMAGE_HEIGHT;
+    private static final int INPUT_NEURONS_COUNT = 5;
     /** Total number of hidden layer neurons. Value determined by playing around... as this is more art than science */
     private static final int HIDDEN_LAYER_NEURONS_COUNT = 10;
     /** Total number of output neurons. As the output is supposed to be a number between 0 and 9 it makes sense to have 10 output neurons. */
-    private static final int OUTPUT_NEURONS_COUNT = 10;
+    private static final int OUTPUT_NEURONS_COUNT = 2;
 
     /** The name of the network. Helps identifying from which generation the network comes from or to identify it when loaded from a file */
     private String name;
@@ -105,7 +104,7 @@ public class Network implements Comparable<Network>{
         }
 
         Output networkOutput = new Output();
-        networkOutput.setDetectedNumber(Integer.valueOf(winnerNeuron.label.split("O")[1]));
+        networkOutput.setWinnerNeuron(winnerNeuron.label);
         networkOutput.setMeanSquaredError(meanSquaredError);
         return networkOutput;
     }
@@ -123,7 +122,7 @@ public class Network implements Comparable<Network>{
 
     private void calculateOutputLayerValues() {
         Map<Neuron, Float> weightedSumLinks = new HashMap<>();
-        for (int outputIndex=0; outputIndex<10; outputIndex++) {
+        for (int outputIndex=0; outputIndex<OUTPUT_NEURONS_COUNT; outputIndex++) {
             for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
                 weightedSumLinks.put(neurons.get("H" + hlIndex), neurons.get("H" + hlIndex).links.get(neurons.get("O" + outputIndex)));
             }
@@ -250,7 +249,7 @@ public class Network implements Comparable<Network>{
     @Getter
     @Setter
     public class Output {
-        private int detectedNumber;
+        private String winnerNeuron;
         private float meanSquaredError;
     }
 }

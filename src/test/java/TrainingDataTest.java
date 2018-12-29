@@ -1,4 +1,5 @@
 import com.jeromewagener.util.Evaluator;
+import com.jeromewagener.util.HandwrittenNumbersTrainingData;
 import com.jeromewagener.util.ImageCompressor;
 import com.jeromewagener.util.TrainingData;
 import org.junit.Assert;
@@ -6,55 +7,36 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
 
 public class TrainingDataTest {
 
     @Test
-    public void loadTrainingData() {
+    public void loadTrainingData() throws IOException {
         int exceptionCount = 0;
 
-        TrainingData trainingData = new TrainingData();
+        TrainingData trainingData = new HandwrittenNumbersTrainingData();
         trainingData.load();
 
         Evaluator evaluator = new Evaluator();
-
-        for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
-            try {
-
-                evaluator.evaluate(entry.getKey(), entry.getValue(), null);
-
-            } catch (IOException e) {
-                exceptionCount++;
-            }
-        }
 
         assertEquals(0, exceptionCount);
     }
 
     @Test
     public void checkTrainingDataDistribution() {
-        TrainingData trainingData = new TrainingData();
-        trainingData.load();
+        TrainingData trainingData = new HandwrittenNumbersTrainingData();
 
         HashMap<Integer, Integer> distribution = new HashMap<>();
 
-        for (Map.Entry<String, Integer> entry : trainingData.get().entrySet()) {
-            if (distribution.get(trainingData.get().get(entry.getKey())) == null) {
-                distribution.put(trainingData.get().get(entry.getKey()), 1);
-            } else {
-                distribution.put(trainingData.get().get(entry.getKey()), distribution.get(trainingData.get().get(entry.getKey())) + 1);
-            }
-        }
 
         System.out.println(distribution);
     }
 
     @Test
     public void readAndCompressKnownImageAndTestAgainstKnownCompression() throws IOException {
-        TrainingData trainingData = new TrainingData();
+        TrainingData trainingData = new HandwrittenNumbersTrainingData();
         trainingData.load();
 
         float[] zero = new float[] {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0039215686274509665f, 0.015686274509803977f, 0.0039215686274509665f, 0.0f, 0.0f,
