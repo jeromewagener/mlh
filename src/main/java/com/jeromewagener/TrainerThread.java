@@ -1,8 +1,8 @@
 package com.jeromewagener;
 
+import com.jeromewagener.network.Evaluator;
 import com.jeromewagener.network.Genetics;
 import com.jeromewagener.network.Network;
-import com.jeromewagener.util.Evaluator;
 import com.jeromewagener.util.TrainingData;
 import lombok.Getter;
 
@@ -15,9 +15,6 @@ import java.util.logging.Logger;
 
 @Getter
 public class TrainerThread extends Thread {
-
-    public static final int MAX_POPULATION_SIZE = 200;
-    static int MAX_GENERATIONS_COUNT = 100;
     Logger LOGGER;
 
     private String winnerNetwork;
@@ -53,14 +50,14 @@ public class TrainerThread extends Thread {
         if (population == null) {
             population = new ArrayList<>();
 
-            for (int i = 0; i < MAX_POPULATION_SIZE; i++) {
+            for (int i = 0; i < Runner.MAX_POPULATION_SIZE; i++) {
                 Network network = new Network("NN-" + i, random);
                 population.add(network);
             }
         }
 
         // Let evolution do its magic
-        for (int generation = 1; generation <= MAX_GENERATIONS_COUNT; generation++) {
+        for (int generation = 1; generation <= Runner.MAX_GENERATIONS_COUNT; generation++) {
 
 
             for (Network network : population) {
@@ -111,7 +108,7 @@ public class TrainerThread extends Thread {
         //Collections.reverse(population);
         try {
             winnerNetwork = population.get(0).printNetwork(false);
-            LOGGER.info(MAX_GENERATIONS_COUNT + " generations with a population of " + MAX_POPULATION_SIZE + " executed in " + (System.currentTimeMillis() - startTime) + "ms" +
+            LOGGER.info(Runner.MAX_GENERATIONS_COUNT + " generations with a population of " + Runner.MAX_POPULATION_SIZE + " executed in " + (System.currentTimeMillis() - startTime) + "ms" +
                     " >> Winner: " + population.get(0).getName() +
                     " >> Success Rate: " + population.get(0).getSuccessRate() + "%" +
                     " >> Mean squared error: " + population.get(0).getMeanSquaredError() +

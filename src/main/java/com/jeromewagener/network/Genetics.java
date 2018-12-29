@@ -1,9 +1,11 @@
 package com.jeromewagener.network;
 
-import com.jeromewagener.TrainerThread;
+import com.jeromewagener.Runner;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Random;
 
 public class Genetics {
     private static Network breed(String networkName, Network network1, Network network2) throws IOException {
@@ -70,7 +72,7 @@ public class Genetics {
     }
 
     public static void evolve(String name, int generation, ArrayList<Network> population, Random random) throws IOException {
-        int halfPopulationSize = Math.round(TrainerThread.MAX_POPULATION_SIZE / 2.0f);
+        int halfPopulationSize = Math.round(Runner.MAX_POPULATION_SIZE / 2.0f);
 
         // drop all low performers
         int populationSize = population.size();

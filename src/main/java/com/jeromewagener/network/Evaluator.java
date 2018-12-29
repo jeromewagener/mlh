@@ -1,6 +1,5 @@
-package com.jeromewagener.util;
+package com.jeromewagener.network;
 
-import com.jeromewagener.network.Network;
 import lombok.Getter;
 
 @Getter

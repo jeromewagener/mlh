@@ -1,5 +1,7 @@
 package com.jeromewagener.util;
 
+import com.jeromewagener.Runner;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -8,11 +10,10 @@ import java.util.List;
 
 public class AboveTwoPointFiveTrainingData extends TrainingData {
 
-    private static final String TRAINING_DATA_PATH = "/home/jerome/mlh/mlh/src/main/resources/nn-data.csv";
     private ArrayList<Structure> dataSet = new ArrayList<>();
 
     public void load() {
-        try (BufferedReader br = new BufferedReader(new FileReader(TRAINING_DATA_PATH))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(Runner.TRAINING_DATA_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] lineArray = line.split(",");

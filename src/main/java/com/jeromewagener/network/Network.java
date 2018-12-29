@@ -2,6 +2,7 @@ package com.jeromewagener.network;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.jeromewagener.Runner;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,13 +17,6 @@ import java.util.*;
 @Getter
 @Setter
 public class Network implements Comparable<Network>{
-    /** Total number of input neurons. Each input neuron represents one pixel of the scale down handwritten number image */
-    private static final int INPUT_NEURONS_COUNT = 5;
-    /** Total number of hidden layer neurons. Value determined by playing around... as this is more art than science */
-    private static final int HIDDEN_LAYER_NEURONS_COUNT = 10;
-    /** Total number of output neurons. As the output is supposed to be a number between 0 and 9 it makes sense to have 10 output neurons. */
-    private static final int OUTPUT_NEURONS_COUNT = 2;
-
     /** The name of the network. Helps identifying from which generation the network comes from or to identify it when loaded from a file */
     private String name;
 
@@ -47,14 +41,14 @@ public class Network implements Comparable<Network>{
         this.name = name;
 
         // add output neurons
-        for (int i=0; i<OUTPUT_NEURONS_COUNT; i++) {
+        for (int i=0; i<Runner.OUTPUT_NEURONS_COUNT; i++) {
             neurons.put("O" + i, new Neuron( "O" + i, null, random.nextFloat()*10));
         }
 
         // add hidden layer neurons
-        for (int i=0; i<HIDDEN_LAYER_NEURONS_COUNT; i++) {
+        for (int i=0; i<Runner.HIDDEN_LAYER_NEURONS_COUNT; i++) {
             Map<Neuron, Float> links = new HashMap<>();
-            for (int outputIndex=0; outputIndex<OUTPUT_NEURONS_COUNT; outputIndex++) {
+            for (int outputIndex=0; outputIndex<Runner.OUTPUT_NEURONS_COUNT; outputIndex++) {
                 links.put(neurons.get("O" + outputIndex), random.nextFloat());
             }
 
@@ -62,9 +56,9 @@ public class Network implements Comparable<Network>{
         }
 
         // add input neurons
-        for (int i = 0; i<INPUT_NEURONS_COUNT; i++) {
+        for (int i = 0; i< Runner.INPUT_NEURONS_COUNT; i++) {
             Map<Neuron, Float> links = new HashMap<>();
-            for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
+            for (int hlIndex=0; hlIndex<Runner.HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
                 links.put(neurons.get("H" + hlIndex), random.nextFloat());
             }
 
@@ -77,7 +71,7 @@ public class Network implements Comparable<Network>{
         for (int i=0; i<inputVector.length; i++) {
             neurons.get("I" + i).value = inputVector[i];
 
-            if (i < Network.OUTPUT_NEURONS_COUNT) {
+            if (i < Runner.OUTPUT_NEURONS_COUNT) {
                 outputNeurons.add(neurons.get("O" + i));
             }
         }
@@ -111,8 +105,8 @@ public class Network implements Comparable<Network>{
 
     private void calculateHiddenLayerValues() {
         Map<Neuron, Float> weightedSumLinks = new HashMap<>();
-        for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
-            for (int inputIndex=0; inputIndex<INPUT_NEURONS_COUNT; inputIndex++) {
+        for (int hlIndex=0; hlIndex<Runner.HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
+            for (int inputIndex=0; inputIndex<Runner.INPUT_NEURONS_COUNT; inputIndex++) {
                 weightedSumLinks.put(neurons.get("I" + inputIndex), neurons.get("I" + inputIndex).links.get(neurons.get("H" + hlIndex)));
             }
 
@@ -122,8 +116,8 @@ public class Network implements Comparable<Network>{
 
     private void calculateOutputLayerValues() {
         Map<Neuron, Float> weightedSumLinks = new HashMap<>();
-        for (int outputIndex=0; outputIndex<OUTPUT_NEURONS_COUNT; outputIndex++) {
-            for (int hlIndex=0; hlIndex<HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
+        for (int outputIndex=0; outputIndex<Runner.OUTPUT_NEURONS_COUNT; outputIndex++) {
+            for (int hlIndex=0; hlIndex<Runner.HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
                 weightedSumLinks.put(neurons.get("H" + hlIndex), neurons.get("H" + hlIndex).links.get(neurons.get("O" + outputIndex)));
             }
 
@@ -187,26 +181,26 @@ public class Network implements Comparable<Network>{
         JsonObject jsonObject = new JsonParser().parse(networkJson).getAsJsonObject();
 
         // Read and create output neurons first as they will be needed for the links from the hidden layer neurons
-        for (int i=0; i<Network.OUTPUT_NEURONS_COUNT; i++) {
+        for (int i=0; i<Runner.OUTPUT_NEURONS_COUNT; i++) {
             neurons.put("O" + i, new Neuron("O" + i, null, jsonObject.get("O" + i).getAsJsonObject().get("bias").getAsFloat()));
         }
 
         // Read and create hidden layer neurons second and link to the output neurons using the link values from the json
-        for (int i=0; i<Network.HIDDEN_LAYER_NEURONS_COUNT; i++) {
+        for (int i=0; i<Runner.HIDDEN_LAYER_NEURONS_COUNT; i++) {
             Map<Neuron, Float> links = new HashMap<>();
             neurons.put("H" + i, new Neuron("H" + i, links, jsonObject.get("H" + i).getAsJsonObject().get("bias").getAsFloat()));
 
-            for (int j=0; j<Network.OUTPUT_NEURONS_COUNT; j++) {
+            for (int j=0; j<Runner.OUTPUT_NEURONS_COUNT; j++) {
                 links.put(neurons.get("O" + j), jsonObject.get("H" + i).getAsJsonObject().get("links").getAsJsonObject().get("O" + j).getAsFloat());
             }
         }
 
         // Read and create input neurons last and link to the hidden layer neurons using the link values from the json
-        for (int i=0; i<Network.INPUT_NEURONS_COUNT; i++) {
+        for (int i=0; i<Runner.INPUT_NEURONS_COUNT; i++) {
             Map<Neuron, Float> links = new HashMap<>();
             neurons.put("I" + i, new Neuron("I" + i, links, null));
 
-            for (int j=0; j<Network.HIDDEN_LAYER_NEURONS_COUNT; j++) {
+            for (int j=0; j<Runner.HIDDEN_LAYER_NEURONS_COUNT; j++) {
                 links.put(neurons.get("H" + j), jsonObject.get("I" + i).getAsJsonObject().get("links").getAsJsonObject().get("H" + j).getAsFloat());
             }
         }

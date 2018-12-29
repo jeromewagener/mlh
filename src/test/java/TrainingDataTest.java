@@ -1,4 +1,4 @@
-import com.jeromewagener.util.Evaluator;
+import com.jeromewagener.network.Evaluator;
 import com.jeromewagener.util.HandwrittenNumbersTrainingData;
 import com.jeromewagener.util.ImageCompressor;
 import com.jeromewagener.util.TrainingData;
