@@ -58,8 +58,6 @@ public class TrainerThread extends Thread {
 
         // Let evolution do its magic
         for (int generation = 1; generation <= Runner.MAX_GENERATIONS_COUNT; generation++) {
-
-
             for (Network network : population) {
                 int successCounter = 0;
                 float meanSquaredError = 0.0f;
@@ -79,7 +77,7 @@ public class TrainerThread extends Thread {
 
                 try {
                     LOGGER.info("Intermediate logging" +
-                            " >> Name: " + network.getName() + "%" +
+                            " >> Name: " + network.getName() +
                             " >> Success Rate: " + network.getSuccessRate() + "%" +
                             " >> Mean squared error: " + network.getMeanSquaredError() +
                             " >> HashCode: " + network.printNetwork(false).hashCode());
@@ -90,12 +88,6 @@ public class TrainerThread extends Thread {
 
             Collections.sort(population);
 
-            /*try {
-                population.get(0).calculate(TrainingData);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
-
             try {
                 Genetics.evolve(getName(), generation, population, random);
             } catch (IOException e) {
@@ -105,7 +97,7 @@ public class TrainerThread extends Thread {
 
         // At the end, we sort by best to worst network from the latest population and we print the best network to a file
         Collections.sort(population);
-        //Collections.reverse(population);
+
         try {
             winnerNetwork = population.get(0).printNetwork(false);
             LOGGER.info(Runner.MAX_GENERATIONS_COUNT + " generations with a population of " + Runner.MAX_POPULATION_SIZE + " executed in " + (System.currentTimeMillis() - startTime) + "ms" +

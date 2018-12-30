@@ -104,24 +104,32 @@ public class Network implements Comparable<Network>{
     }
 
     private void calculateHiddenLayerValues() {
-        Map<Neuron, Float> weightedSumLinks = new HashMap<>();
         for (int hlIndex=0; hlIndex<Runner.HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
+            float weightedSum = 0;
+            Neuron hidden = neurons.get("H" + hlIndex);
+
             for (int inputIndex=0; inputIndex<Runner.INPUT_NEURONS_COUNT; inputIndex++) {
-                weightedSumLinks.put(neurons.get("I" + inputIndex), neurons.get("I" + inputIndex).links.get(neurons.get("H" + hlIndex)));
+                Neuron input = neurons.get("I" + inputIndex);
+                weightedSum += input.value * input.links.get(hidden);
             }
 
-            neurons.get("H" + hlIndex).calculateWeightedSum(weightedSumLinks);
+            weightedSum -= hidden.bias;
+            hidden.value = Neuron.sigmoid(weightedSum);
         }
     }
 
     private void calculateOutputLayerValues() {
-        Map<Neuron, Float> weightedSumLinks = new HashMap<>();
         for (int outputIndex=0; outputIndex<Runner.OUTPUT_NEURONS_COUNT; outputIndex++) {
+            float weightedSum = 0;
+            Neuron output = neurons.get("O" + outputIndex);
+
             for (int hlIndex=0; hlIndex<Runner.HIDDEN_LAYER_NEURONS_COUNT; hlIndex++) {
-                weightedSumLinks.put(neurons.get("H" + hlIndex), neurons.get("H" + hlIndex).links.get(neurons.get("O" + outputIndex)));
+                Neuron hidden = neurons.get("H" + hlIndex);
+                weightedSum += hidden.value * hidden.links.get(output);
             }
 
-            neurons.get("O" + outputIndex).calculateWeightedSum(weightedSumLinks);
+            weightedSum -= output.bias;
+            output.value = Neuron.sigmoid(weightedSum);
         }
     }
 

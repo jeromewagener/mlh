@@ -25,16 +25,8 @@ public class Neuron {
         this.bias = bias;
     }
 
-    void calculateWeightedSum(Map<Neuron, Float> links) {
-        float weightedSum = 0;
-
-        for (Map.Entry<Neuron, Float> link : links.entrySet()) {
-            weightedSum += link.getKey().value * link.getValue();
-        }
-
-        weightedSum -= bias;
-
-        this.value = sigmoid(weightedSum);
+    public void setValue(float value) {
+        this.value = value;
     }
 
     @Override
